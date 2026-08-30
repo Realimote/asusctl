@@ -1,3 +1,4 @@
+# 这是一个基于上游asusctl的UI重制版
 # asusctl for ASUS ROG
 
 <p align="center">
