@@ -1,6 +1,7 @@
 import { Palette, TabWidget, Button, CheckBox } from "std-widgets.slint";
 import { Graph, Node } from "../widgets/graph.slint";
 import { SystemToggle } from "../widgets/common.slint";
+import { Theme } from "../widgets/theme.slint";
 import { Profile, FanType, FanPageData } from "../types/fan_types.slint";
 
 component FanTab inherits Rectangle {
@@ -16,21 +17,22 @@ component FanTab inherits Rectangle {
     in-out property <[Node]> nodes;
 
     VerticalLayout {
-        padding: 5px;
+        padding: Theme.space-sm;
         HorizontalLayout {
             if root.tab_enabled: Graph {
                 nodes <=> root.nodes;
             }
             if !root.tab_enabled: Rectangle {
                 Text {
-                    font-size: 16px;
-                    text: @tr("This fan is not avilable on this machine");
+                    font-size: Theme.font-lg;
+                    color: Theme.text-muted;
+                    text: @tr("This fan is not available on this machine");
                 }
             }
         }
 
         Rectangle {
-            background: Palette.border;
+            background: Theme.border;
             height: 1px;
         }
 

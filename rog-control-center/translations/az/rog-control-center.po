@@ -183,7 +183,7 @@ msgstr "Enerji qurşaqları"
 
 #: rog-control-center/ui/pages/fans.slint:27
 msgctxt "FanTab"
-msgid "This fan is not avilable on this machine"
+msgid "This fan is not available on this machine"
 msgstr "Bu ventilyator bu cihazda mövcud deyil"
 
 #: rog-control-center/ui/pages/fans.slint:42

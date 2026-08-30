@@ -7,28 +7,45 @@
   <a href="https://discord.gg/B8GftRW2Hd"><img src="extra/icons/discord-button.svg" width="190" height="32" alt="Discord" /></a>
 </p>
 
+`asusctl` is a system control utility for Linux designed primarily for ASUS ROG, TUF and ProArt laptops, with reduced functionality available for non-ASUS hardware.
+
 > [!WARNING]
-> **Kernel Patch Requirement:** Many features are developed alongside Linux kernel updates. If an expected feature is missing, ensure your system is running the latest stable kernel or a kernel containing the required patches.
+> **Kernel requirement:** many features are developed alongside Linux kernel updates. If an expected feature is missing, make sure you are running the latest stable kernel, or a kernel containing the required patches. TDP control in particular requires the `asus-armoury` driver, mainline since Linux 6.19.
 
-`asusctl` is a system control utility for Linux designed primarily for ASUS laptops, with reduced functionality available for non-ASUS hardware.
+![ROG Control Center](docs/assets/shared/rog-control-center.png)
 
-The project consists of three core components:
-- `asusd`: System daemon controlled through D-Bus interfaces.
-- `rog-control-center`: Graphical user interface for `asusd`.
-- `asusctl`: Command-line client for `asusd`.
+## Components
 
-## Overview and goals
+| Component | Description |
+| :--- | :--- |
+| `asusd` | System daemon exposing hardware control over D-Bus |
+| `rog-control-center` | Graphical interface (dashboard, fan curves, Aura, GPU modes, …) with tray integration |
+| `asusctl` | Command-line client for `asusd` |
+| `asusd-user` | Per-user daemon for AniMe Matrix and related user services |
+| `asus-shutdown` | Shutdown helper that safely applies deferred GPU firmware settings |
 
-The primary goal of `asusctl` is to provide a safe, efficient abstraction layer over hardware features using D-Bus. It manages automated system responses, such as switching performance profiles when connecting or disconnecting AC power.
+## The control center UI
 
-- **Clean interface:** Exposes hardware controls safely via D-Bus.
-- **Resource efficiency:** Operates with minimal CPU overhead and under 1 MB of RAM during standard daemon execution.
+`rog-control-center` presents a single, consistent dark card-based interface:
+
+- **Dashboard** — one page for the everyday controls: performance profile, GPU mode, display toggles, battery charge limit, keyboard lighting and Slash lighting, each with live status.
+- **System** — hardware monitor plus platform profile, EPP and PPT (CPU/GPU power limit) tuning.
+- **Aura** — keyboard lighting modes with per-colour HSV pickers and per-zone power behaviour.
+- **AniMe Matrix** — brightness, display and built-in animation settings for equipped models.
+- **Slash** — A-cover LED strip brightness, animation and visibility triggers.
+- **Fans** — per-profile, per-fan custom fan curves on an interactive graph.
+- **GPU** — Integrated/Hybrid/Ultimate switching, reserved GPU memory, XG Mobile LED.
+- **Battery** — charge limit and battery health information.
+- **Settings** — tray, autostart, notifications and the ROG/Armoury key global shortcut.
+
+The whole interface is built from a shared design system: all colours, spacing, corner radii and font sizes come from the `Theme` global in
+[`rog-control-center/ui/widgets/theme.slint`](rog-control-center/ui/widgets/theme.slint), and pages are composed from common widgets (cards, section headers, info banners, slider/toggle/dropdown rows) in `rog-control-center/ui/widgets/`. If you want to adjust the look of the app, start there — no page-local colour hex values are used.
 
 ## Hardware and kernel compatibility
 
 ### Supported laptops
 
-`asusctl` supports most ASUS gaming laptops equipped with a USB keyboard. To verify device compatibility, run `lsusb` in your terminal and check for entries matching:
+`asusctl` supports most ASUS gaming laptops equipped with a USB keyboard. To verify device compatibility, run `lsusb` and check for entries matching:
 
 ```plain
 Bus 001 Device 002: ID 0b05:1866 ASUSTek Computer, Inc. N-KEY Device
@@ -40,82 +57,54 @@ or
 Bus 003 Device 002: ID 0b05:19b6 ASUSTek Computer, Inc. [unknown]
 ```
 
-Devices displaying these hardware IDs typically function without extra configuration. Features such as AniMe Matrix, LED controls, and Slash displays work regardless of your laptop make. However, if you are using a newer laptop model, adding explicit hardware support may be required. See [Laptop support requests](#laptop-support-requests) for details.
+Devices with these hardware IDs typically work without extra configuration. Features such as AniMe Matrix, LED controls and Slash displays work regardless of laptop make, but newer models may require explicit support — see [Laptop support requests](#laptop-support-requests).
 
-Features such as battery charge thresholds use generic kernel interfaces and work on non-ASUS hardware, but platform and fan controls require ASUS-specific `asus-nb-wmi` or `asus-armoury` drivers.
+Battery charge thresholds use generic kernel interfaces and work on non-ASUS hardware; platform and fan controls require the ASUS `asus-nb-wmi` or `asus-armoury` drivers.
 
-### Kernel requirements
-
-Due to ongoing development, the minimum suggested kernel version is always **the latest**, as improvements are merged upstream continuously.
-
-Support for Thermal Design Power (TDP) is tied to the new `asus-armoury` driver: available mainline since Linux 6.19: everything older is not supported.
-
-### Display server support (X11)
+### Display server support
 
 > [!NOTE]
-> X11 is officially unsupported. Technical assistance is not provided for X11 environments due to developer resource constraints and the unmaintained status of X11 itself.
->
-> Users who require X11 integration may compile the GUI application with X11 support enabled using `cargo build --features "rog-control-center/x11"`. Operation on unmaintained display servers remains the responsibility of the user.
+> X11 is officially unsupported. Users who require it may compile the GUI with X11 support enabled using `cargo build --features "rog-control-center/x11"`. Operation on unmaintained display servers remains the responsibility of the user.
 
 ## Implemented features
 
-Feature availability depends on upstream Linux kernel support and specific hardware capabilities.
+Feature availability depends on upstream kernel support and hardware capabilities.
 
-### Power and performance
+- **Power and performance:** platform profiles with per-profile EPP and AC/battery policy switching, custom fan curves, PPT/CPU/GPU power-limit sliders, GPU MUX toggling (2022+ models)
+- **Lighting:** built-in LED modes, per-key RGB, AniMe Matrix displays (G14, M16, Strix Scar 16/18), Slash lighting
+- **System:** battery charge limits and health reporting, POST audio toggle, dGPU power notifications, global shortcuts through the desktop portal
 
-- [x] **Battery charge thresholds:** Configure maximum charging limits (requires kernel support)
-- [x] **Custom fan curves:** Adjust fan profiles on supported hardware
-- [x] **GPU MUX toggling:** Switch GPU operational modes (G-Sync / MUX) on 2022 and newer laptops
-- [x] **Power profile management:** Control system performance profiles as detailed in [MANUAL.md](MANUAL.md)
+Keyboard backlight support relies on the hardware mappings in [`rog-aura/data/aura_support.ron`](rog-aura/data/aura_support.ron) (installed to `/usr/share/asusd/aura_support.ron`). See the [rog-aura README](rog-aura/README.md) for details.
 
-### Lighting and displays
+## Installation
 
-- [x] **Built-in LED controls:** Adjust integrated keyboard lighting modes
-- [x] **Per-key RGB configuration:** Customize individual key backlight settings
-- [x] **Advanced lighting effects:** Apply custom animation modes (currently undergoing revision)
-- [x] **AniMe Matrix displays:** Control panel rendering on equipped G14, M16, and Strix Scar 16/18 models
+Pre-built packages are available in several distribution repositories — check your package manager before building from source.
 
-### System integration
+| Distribution | Source | Install |
+| :--- | :--- | :--- |
+| **Ultramarine / Nobara** | Official repositories | `sudo dnf install asusctl` |
+| **Fedora** | [Terra](https://terrapkg.com/) | `sudo dnf install asusctl` |
+| **openSUSE** | [OBS](https://download.opensuse.org/repositories/home:/luke_nukem:/asus/) | Add the OBS repository |
+| **Arch Linux** | [OGC Arch repository](https://github.com/OpenGamingCollective/ogc-arch-packaging) | See the OGC Arch guide |
+| **Nix / NixOS** | Nixpkgs | `nix-env -iA nixpkgs.asusctl` |
+| **Solus** | Official repositories | `sudo eopkg install asusctl` |
 
-- [x] **System daemon (`asusd`):** Background service handling hardware communications
-- [x] **Graphical interface (`rog-control-center`):** Desktop application with system tray integration and notifications
-- [x] **POST audio controls:** Toggle the BIOS boot sound setting
+### Service management
 
-### Additional hardware configuration notes
-
-Keyboard backlight support relies on hardware mappings defined in [`./rog-aura/data/aura_support.ron`](./rog-aura/data/aura_support.ron), installed to `/usr/share/asusd/aura_support.ron`. Because keyboard controller configurations vary across model generations and firmware revisions, explicit layout definitions prevent misconfigurations. Refer to the [rog-aura README](./rog-aura/README.md) for configuration details.
-
-## Installation and setup
-
-### Package installation
-
-Pre-built binary packages are available in several Linux distribution repositories. Check your package manager before building from source.
-
-| Distribution | Repository Source | Installation Command | Notes |
-| :--- | :--- | :--- | :--- |
-| **Ultramarine / Nobara** | Official Repositories | `sudo dnf install asusctl` | Direct package installation |
-| **Fedora** | [Terra Repository](https://terrapkg.com/) | `sudo dnf install asusctl` | Requires Terra repository enabled |
-| **openSUSE** | [OBS Repository](https://download.opensuse.org/repositories/home:/luke_nukem:/asus/) | Add OBS repository | Maintained on OpenSUSE Build Service |
-| **Arch Linux** | [OGC Arch Repository](https://github.com/OpenGamingCollective/ogc-arch-packaging) | Refer to OGC Arch Guide | Maintained via OGC Arch pacman repository |
-| **Nix / NixOS** | Nixpkgs | `nix-env -iA nixpkgs.asusctl` | Package name: `asusctl` |
-| **Solus** | Official Repositories | `sudo eopkg install asusctl` | Direct package installation |
-
-#### Service management
-
-`asusctl` uses `udev` rules to initialize background services when hardware is detected.
-
-On systems such as Fedora or Ultramarine, enable and start the services manually after installation:
+`asusctl` uses `udev` rules to start its services when hardware is detected. On distributions such as Fedora or Ultramarine, enable the services manually after installation:
 
 ```sh
 sudo systemctl enable --now asusd.service
 sudo systemctl enable --now asus-shutdown.service
 ```
 
-On Debian, service activation may require manual intervention. On Pop!_OS systems, disable the `system76-power` GNOME extension and its associated `systemd` service to prevent power profile conflicts.
+On Pop!_OS, disable the `system76-power` GNOME extension and its service to avoid power-profile conflicts.
+
+Full per-distribution guides, including immutable Fedora variants, Bazzite, NixOS and PikaOS, live in the [documentation book](https://asus-linux.org/) (`docs/` in this repository).
 
 ### Building from source
 
-Compiling `asusctl` requires the Rust compiler and Cargo toolchain from [rustup.rs](https://rustup.rs/). Use the stable toolchain for build tasks.
+A Rust toolchain from [rustup.rs](https://rustup.rs/) (stable) is required, plus the usual build tools.
 
 #### Arch Linux
 
@@ -135,8 +124,6 @@ sudo make install
 
 #### openSUSE
 
-For KDE Plasma desktop environments without GTK dependencies:
-
 ```sh
 sudo zypper in -t pattern devel_basis
 sudo zypper in rustup make cmake clang-devel libxkbcommon-devel systemd-devel expat-devel pcre2-devel libzstd-devel
@@ -144,38 +131,23 @@ make
 sudo make install
 ```
 
-#### Debian (Unsupported)
-
-Debian is officially unsupported, but you can attempt to build with:
+#### Debian / Ubuntu / Pop!_OS (unsupported)
 
 ```sh
-sudo apt install libclang-dev libudev-dev libfontconfig-dev build-essential cmake libxkbcommon-dev
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-make
-sudo make install
-```
-
-#### Ubuntu and Pop!_OS (Unsupported)
-
-```sh
-sudo apt install make cargo gcc pkg-config openssl libasound2-dev cmake build-essential python3 libfreetype6-dev libexpat1-dev libxcb-composite0-dev libssl-dev libx11-dev libfontconfig1-dev curl libclang-dev libudev-dev checkinstall libseat-dev libinput-dev libxkbcommon-dev libgbm-dev
+sudo apt install make cargo gcc pkg-config openssl libasound2-dev cmake build-essential python3 \
+  libfreetype6-dev libexpat1-dev libxcb-composite0-dev libssl-dev libx11-dev libfontconfig1-dev \
+  curl libclang-dev libudev-dev libinput-dev libxkbcommon-dev libgbm-dev
 make
 sudo make install
 ```
 
 ### Upgrading
 
-When upgrading an existing installation, reload systemd service definitions and restart `asusd`:
-
 ```sh
 sudo systemctl daemon-reload && sudo systemctl restart asusd
 ```
 
-Alternatively, reboot the system to apply updates.
-
 ### Uninstalling
-
-To remove installations built from source, stop and disable the services, run `sudo make uninstall` from the source directory, and reload systemd:
 
 ```sh
 sudo systemctl disable --now asusd.service asus-shutdown.service
@@ -183,47 +155,60 @@ sudo make uninstall
 sudo systemctl daemon-reload
 ```
 
-Remove any remaining configuration files in `/etc/asusd/`.
+Then remove any leftover configuration in `/etc/asusd/`. For package installations, use your distribution's package manager instead.
 
-For binary installations, remove `asusctl` using your distribution package manager.
+## Development
 
-## Development and testing
+The repository is a Cargo workspace. Daemon-side architecture patterns are documented in [docs/dev/design-patterns.md](docs/dev/design-patterns.md), user and distribution documentation in `docs/` (an mdBook), and the CLI reference in [MANUAL.md](MANUAL.md).
 
-### Contributing
+### Running the UI without hardware
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and git hooks setup.
+`rog-control-center` has a demo mode that runs the full interface with representative fake data — no `asusd`, no dbus, no ASUS hardware required. It is the fastest way to work on the UI:
+
+```sh
+cargo build -p rog-control-center
+./target/debug/rog-control-center --demo
+
+# Open directly on a specific page (0 = dashboard … 9 = about)
+ROGCC_DEMO_PAGE=1 ./target/debug/rog-control-center --demo
+```
+
+All controls are interactive and update only the demo state.
 
 ### AniMe Matrix simulator
 
-An SDL2-based simulator is included for testing matrix display rendering without physical hardware.
-
-To compile and launch the simulator:
+An SDL2-based simulator is included for testing matrix rendering without hardware:
 
 ```sh
 cargo build --package rog_simulators
 ./target/debug/anime_sim
 ```
 
-Restart `asusd` after starting the simulator to attach the service to the simulated display interface. Running the simulator on a laptop with a physical display redirects display output to the simulator window.
+Restart `asusd` after starting the simulator to attach it to the simulated display.
 
-### Laptop support requests
+### Tests and linting
 
-To request support for unlisted hardware models, open an issue on the [project issue tracker](https://github.com/OpenGamingCollective/asusctl/issues).
+```sh
+cargo test
+cargo clippy
+```
 
-- **PPT Sliders:** For specific issues regarding PPT sliders, refer to [Issue #124](https://github.com/OpenGamingCollective/asusctl/issues/124).
-- **Keyboard Backlight Support:** The procedure involves testing layout changes locally in `/usr/share/asusd/aura_support.ron` (or `./rog-aura/data/aura_support.ron`). Once you verify that your changes work for your laptop model, create a pull request with the updated mapping.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening pull requests.
 
-## Legal and governance
+## Laptop support requests
 
-### License and trademarks
+To request support for unlisted hardware, open an issue on the [issue tracker](https://github.com/OpenGamingCollective/asusctl/issues).
+
+- **PPT sliders:** see [issue #124](https://github.com/OpenGamingCollective/asusctl/issues/124).
+- **Keyboard backlight:** test layout changes locally in `/usr/share/asusd/aura_support.ron` (or `rog-aura/data/aura_support.ron` in this repository); once they work for your model, open a pull request with the updated mapping.
+
+## License
 
 This project is licensed under the [Mozilla Public License 2.0 (MPL-2.0)](LICENSE).
 
 ---
 
-ASUS and ROG are registered trademarks of ASUSTeK Computer Inc. in the United States and other jurisdictions.
-
-References to ASUS products, services, or trademarks within this repository do not constitute or imply endorsement, sponsorship, or recommendation by ASUSTeK Computer Inc. Trademarks are used solely for hardware identification purposes.
+ASUS and ROG are registered trademarks of ASUSTeK Computer Inc. in the United States and other jurisdictions. References to ASUS products, services, or trademarks within this repository do not constitute or imply endorsement, sponsorship, or recommendation by ASUSTeK Computer Inc. Trademarks are used solely for hardware identification purposes.
 
 ---
 

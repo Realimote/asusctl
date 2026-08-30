@@ -1,0 +1,57 @@
+// Central design tokens for the whole app. Every page and widget must pull
+// colours, spacing, radii and font sizes from here so the UI stays coherent.
+// The app shell (MainWindow) forces the dark colour scheme, so the palette
+// roles below are always resolved against dark.
+import { Palette } from "std-widgets.slint";
+
+export global Theme {
+    // ── Spacing ─────────────────────────────────────────────────────────
+    out property <length> space-xs: 4px;
+    out property <length> space-sm: 8px;
+    out property <length> space-md: 12px;
+    out property <length> space-lg: 16px;
+    out property <length> space-xl: 24px;
+
+    // ── Corner radii ────────────────────────────────────────────────────
+    // chips and small controls, rows and buttons, cards and overlays
+    out property <length> radius-sm: 6px;
+    out property <length> radius-md: 10px;
+    out property <length> radius-lg: 12px;
+
+    // ── Type scale ──────────────────────────────────────────────────────
+    out property <length> font-xs: 11px;
+    out property <length> font-sm: 12px;
+    out property <length> font-md: 13px;
+    out property <length> font-base: 14px;
+    out property <length> font-lg: 16px;
+    out property <length> font-xl: 18px;
+    out property <length> font-title: 20px;
+
+    // ── Semantic status colours (temp, battery health, banners) ─────────
+    out property <color> status-ok: #22c55e;
+    out property <color> status-warn: #eab308;
+    out property <color> status-danger: #ef4444;
+
+    // ── Section accents, shared by the dashboard and page headers ───────
+    out property <color> accent-perf: #ff3b46;
+    out property <color> accent-gpu: #3b82f6;
+    out property <color> accent-display: #a855f7;
+    out property <color> accent-battery: #22c55e;
+    out property <color> accent-keyboard: #38bdf8;
+    out property <color> accent-slash: #f59e0b;
+
+    // ── Palette roles ───────────────────────────────────────────────────
+    out property <color> text: Palette.foreground;
+    out property <color> text-muted: Palette.foreground.mix(Palette.background, 35%);
+    out property <color> text-control: Palette.control-foreground;
+    out property <color> surface: Palette.background;
+    out property <color> surface-card: Palette.alternate-background;
+    out property <color> surface-raised: Palette.control-background;
+    out property <color> border: Palette.border;
+    out property <color> accent: Palette.accent-background;
+    out property <color> accent-foreground: Palette.accent-foreground;
+    out property <color> selection: Palette.selection-background;
+
+    // ── Fixed metrics ───────────────────────────────────────────────────
+    out property <length> row-height: 44px;
+}

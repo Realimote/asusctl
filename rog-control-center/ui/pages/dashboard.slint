@@ -1,0 +1,479 @@
+// G-Helper style single-page dashboard. Every control binds to the same
+// data globals the advanced pages use, so no extra dbus wiring is needed.
+import { ComboBox, Slider, Switch, ScrollView } from "std-widgets.slint";
+import { ModeButton, SectionHeader, SectionCard, LinkButton, ColourSwatch } from "../widgets/modern.slint";
+import { Theme } from "../widgets/theme.slint";
+import { SystemPageData } from "system.slint";
+import { GPUPageData } from "gpu.slint";
+import { AuraPageData } from "../types/aura_types.slint";
+import { SlashPageData } from "slash.slint";
+
+// Mirror of the sidebar selection so the dashboard links and external
+// code (demo mode, tests) can switch pages.
+export global NavState {
+    in-out property <int> page: 0;
+}
+
+// Sidebar model order for convenience below.
+export global Pages {
+    out property <int> dashboard: 0;
+    out property <int> system: 1;
+    out property <int> aura: 2;
+    out property <int> anime: 3;
+    out property <int> slash: 4;
+    out property <int> fans: 5;
+    out property <int> gpu: 6;
+    out property <int> battery: 7;
+    out property <int> settings: 8;
+    out property <int> about: 9;
+}
+
+export component PageDashboard inherits Rectangle {
+    in property <[bool]> available;
+    // Set by section links (Fan + Power, More, ...); the main window two-way
+    // binds this to the sidebar selection. Indices match the sidebar model.
+    in-out property <int> nav-target: 0;
+    clip: true;
+
+    property <bool> show_perf: SystemPageData.platform_profile != -1;
+    property <bool> show_gpu: GPUPageData.gpu_switchable && GPUPageData.gpu_modes.length > 0;
+    property <bool> show_display: SystemPageData.panel_overdrive != -1
+        || SystemPageData.mini_led_mode != -1
+        || SystemPageData.screen_auto_brightness != -1;
+    property <bool> show_battery: SystemPageData.charge_control_end_threshold != -1;
+    property <bool> show_aura: available[Pages.aura];
+    property <bool> show_slash: available[Pages.slash];
+    property <bool> show_anything: show_perf || show_gpu || show_display || show_battery || show_aura || show_slash;
+
+    // Resolve the active platform profile enum value (Balanced=0,
+    // Performance=1, Quiet=2, LowPower=3, Custom=4) from the dropdown index.
+    property <int> active_profile_value:
+        (SystemPageData.platform_profile >= 0 && SystemPageData.platform_profile < SystemPageData.platform_profile_indexes.length)
+            ? SystemPageData.platform_profile_indexes[SystemPageData.platform_profile]
+            : -1;
+
+    function profile_icon(value: int) -> string {
+        if (value == 0) { return "⚖"; }
+        if (value == 1) { return "🚀"; }
+        if (value == 2) { return "🌙"; }
+        if (value == 3) { return "🌱"; }
+        return "🛠";
+    }
+
+    function profile_label(value: int) -> string {
+        // Plain msgids so the shared profile translations are reused
+        if (value == 0) { return @tr("Balanced"); }
+        if (value == 1) { return @tr("Performance"); }
+        if (value == 2) { return @tr("Quiet"); }
+        if (value == 3) { return @tr("Low-Power"); }
+        return @tr("Custom");
+    }
+
+    function gpu_label(mode: string) -> string {
+        if (mode == "Integrated") { return @tr("gpumode" => "iGPU only"); }
+        if (mode == "Ultimate") { return @tr("gpumode" => "dGPU only"); }
+        if (mode == "Hybrid") { return @tr("gpumode" => "Hybrid"); }
+        return mode;
+    }
+
+    function perf_status() -> string {
+        return (SystemPageData.cpu_temp_val >= 0.0
+                ? "CPU " + Math.round(SystemPageData.cpu_temp_val) + "°C"
+                : "")
+            + (SystemPageData.cpu_fan_rpm >= 0
+                ? (SystemPageData.cpu_temp_val >= 0.0 ? "   ·   " : "")
+                    + @tr("fan_unit" => "Fan") + " " + SystemPageData.cpu_fan_rpm + " RPM"
+                : "");
+    }
+
+    function gpu_status() -> string {
+        if (SystemPageData.dgpu_suspended) {
+            return @tr("gpu_suspended" => "dGPU suspended");
+        }
+        return (SystemPageData.gpu_temp_val >= 0.0
+                ? "GPU " + Math.round(SystemPageData.gpu_temp_val) + "°C"
+                : "")
+            + (SystemPageData.gpu_fan_rpm >= 0
+                ? (SystemPageData.gpu_temp_val >= 0.0 ? "   ·   " : "")
+                    + @tr("fan_unit" => "Fan") + " " + SystemPageData.gpu_fan_rpm + " RPM"
+                : "");
+    }
+
+    function battery_status() -> string {
+        return (SystemPageData.battery_health >= 0
+                ? Math.round(SystemPageData.battery_health) + @tr("battery_health_unit" => "% health")
+                : "")
+            + (SystemPageData.battery_time_estimate != ""
+                ? (SystemPageData.battery_health >= 0 ? "   ·   " : "") + SystemPageData.battery_time_estimate
+                : "")
+            + (SystemPageData.battery_power_consumption > 0.0
+                ? (SystemPageData.battery_health >= 0 || SystemPageData.battery_time_estimate != "" ? "   ·   " : "")
+                    + Math.round(SystemPageData.battery_power_consumption) + " W"
+                : "");
+    }
+
+    function aura_mode_value() -> int {
+        if (AuraPageData.current_available_mode >= 0
+            && AuraPageData.current_available_mode < AuraPageData.supported_basic_modes.length) {
+            return AuraPageData.supported_basic_modes[AuraPageData.current_available_mode];
+        }
+        return 0;
+    }
+
+    ScrollView {
+        VerticalLayout {
+            padding: Theme.space-lg;
+            padding-top: Theme.space-md;
+            spacing: Theme.space-md;
+            alignment: start;
+
+            if !root.show_anything: Rectangle {
+                height: 200px;
+                VerticalLayout {
+                    alignment: center;
+                    spacing: Theme.space-sm;
+                    Text {
+                        text: "🐧";
+                        font-size: 32px;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: @tr("dashboard_empty" => "No ASUS platform features detected.\nIs asusd running?");
+                        font-size: Theme.font-lg;
+                        color: Theme.text-muted;
+                        horizontal-alignment: center;
+                        wrap: word-wrap;
+                    }
+                }
+            }
+
+            // ─────────────── Performance modes ───────────────
+            if root.show_perf: SectionCard {
+                SectionHeader {
+                    icon: "🔥";
+                    accent: Theme.accent-perf;
+                    title: @tr("Performance mode") + ": " + root.profile_label(root.active_profile_value);
+                    status: root.perf_status();
+                }
+
+                HorizontalLayout {
+                    spacing: Theme.space-sm;
+
+                    for v[i] in SystemPageData.platform_profile_indexes: ModeButton {
+                        horizontal-stretch: 1;
+                        accent: Theme.accent-perf;
+                        icon: root.profile_icon(v);
+                        label: root.profile_label(v);
+                        selected: root.active_profile_value == v;
+                        clicked => {
+                            SystemPageData.cb_platform_profile(i);
+                        }
+                    }
+
+                    if available[Pages.fans]: ModeButton {
+                        horizontal-stretch: 1;
+                        accent: Theme.accent-perf;
+                        icon: "🌀";
+                        label: @tr("Fan + Power");
+                        clicked => {
+                            root.nav-target = Pages.fans;
+                        }
+                    }
+                }
+            }
+
+            // ─────────────── GPU modes ───────────────
+            if root.show_gpu: SectionCard {
+                SectionHeader {
+                    icon: "🎮";
+                    accent: Theme.accent-gpu;
+                    title: @tr("GPU mode") + ": " + root.gpu_label(GPUPageData.gpu_modes[GPUPageData.gpu_mode_index]);
+                    status: root.gpu_status();
+                }
+
+                HorizontalLayout {
+                    spacing: Theme.space-sm;
+
+                    for m[i] in GPUPageData.gpu_modes: ModeButton {
+                        horizontal-stretch: 1;
+                        accent: Theme.accent-gpu;
+                        interactive: GPUPageData.gpu_dropdown_enabled;
+                        icon: m == "Integrated" ? "🍃" : (m == "Ultimate" ? "🎮" : "🧩");
+                        label: root.gpu_label(m);
+                        selected: GPUPageData.gpu_mode_index == i;
+                        clicked => {
+                            GPUPageData.cb_set_gpu_mode(i);
+                        }
+                    }
+                }
+
+                Text {
+                    font-size: Theme.font-sm;
+                    color: Theme.text-muted;
+                    text: @tr("gpu_reboot_hint" => "GPU mode changes apply after a reboot.");
+                }
+            }
+
+            // ─────────────── Display ───────────────
+            if root.show_display: SectionCard {
+                SectionHeader {
+                    icon: "🖥";
+                    accent: Theme.accent-display;
+                    title: @tr("Display");
+                    status: SystemPageData.panel_overdrive == 1 ? @tr("panel_od_on" => "Overdrive on") : "";
+                }
+
+                HorizontalLayout {
+                    spacing: Theme.space-sm;
+
+                    if SystemPageData.panel_overdrive != -1: ModeButton {
+                        horizontal-stretch: 1;
+                        accent: Theme.accent-display;
+                        icon: "⏩";
+                        label: @tr("panel_od" => "Panel OD");
+                        selected: SystemPageData.panel_overdrive == 1;
+                        clicked => {
+                            SystemPageData.panel_overdrive = SystemPageData.panel_overdrive == 1 ? 0 : 1;
+                            SystemPageData.cb_panel_overdrive(SystemPageData.panel_overdrive);
+                        }
+                    }
+
+                    if SystemPageData.screen_auto_brightness != -1: ModeButton {
+                        horizontal-stretch: 1;
+                        accent: Theme.accent-display;
+                        icon: "🌞";
+                        label: @tr("Auto brightness");
+                        selected: SystemPageData.screen_auto_brightness == 1;
+                        clicked => {
+                            SystemPageData.screen_auto_brightness = SystemPageData.screen_auto_brightness == 1 ? 0 : 1;
+                            SystemPageData.cb_screen_auto_brightness(SystemPageData.screen_auto_brightness);
+                        }
+                    }
+                }
+
+                if SystemPageData.mini_led_mode != -1: HorizontalLayout {
+                    spacing: Theme.space-sm;
+                    Text {
+                        width: 130px;
+                        text: @tr("MiniLED Mode");
+                        vertical-alignment: center;
+                        font-size: Theme.font-md;
+                    }
+                    ComboBox {
+                        horizontal-stretch: 1;
+                        model <=> SystemPageData.mini_led_mode_choices;
+                        current_index <=> SystemPageData.mini_led_mode;
+                        current_value: SystemPageData.mini_led_mode >= 0
+                            && SystemPageData.mini_led_mode < SystemPageData.mini_led_mode_choices.length
+                            ? SystemPageData.mini_led_mode_choices[SystemPageData.mini_led_mode] : "";
+                        selected => {
+                            SystemPageData.cb_mini_led_mode(SystemPageData.mini_led_mode);
+                        }
+                    }
+                }
+            }
+
+            // ─────────────── Battery ───────────────
+            if root.show_battery: SectionCard {
+                SectionHeader {
+                    icon: "🔋";
+                    accent: Theme.accent-battery;
+                    title: @tr("Battery");
+                    status: root.battery_status();
+                }
+
+                HorizontalLayout {
+                    spacing: Theme.space-md;
+                    Text {
+                        text: @tr("Charge limit");
+                        vertical-alignment: center;
+                        font-size: Theme.font-md;
+                    }
+                    Slider {
+                        horizontal-stretch: 1;
+                        enabled <=> SystemPageData.charge_control_enabled;
+                        minimum: 20;
+                        maximum: 100;
+                        value <=> SystemPageData.charge_control_end_threshold;
+                        released(value) => {
+                            SystemPageData.charge_control_end_threshold = Math.round(value);
+                            SystemPageData.cb_charge_control_end_threshold(Math.round(value));
+                        }
+                    }
+                    Rectangle {
+                        min-width: 58px;
+                        max-width: 58px;
+                        min-height: 30px;
+                        border-radius: Theme.radius-sm;
+                        background: Theme.surface;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        Text {
+                            text: Math.round(SystemPageData.charge_control_end_threshold) + "%";
+                            font-weight: 700;
+                            font-size: Theme.font-md;
+                            color: Theme.text-control;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+
+            // ─────────────── Keyboard Aura ───────────────
+            if root.show_aura: SectionCard {
+                SectionHeader {
+                    icon: "🌈";
+                    accent: Theme.accent-keyboard;
+                    title: @tr("Keyboard Aura");
+                    status: AuraPageData.brightness >= 0 && AuraPageData.brightness < AuraPageData.brightness_names.length
+                        ? AuraPageData.brightness_names[AuraPageData.brightness] : "";
+                }
+
+                HorizontalLayout {
+                    spacing: Theme.space-sm;
+
+                    VerticalLayout {
+                        spacing: Theme.space-xs;
+                        Text {
+                            text: @tr("Brightness");
+                            font-size: Theme.font-sm;
+                            color: Theme.text-muted;
+                        }
+                        ComboBox {
+                            enabled: AuraPageData.brightness_names.length > 0;
+                            model <=> AuraPageData.brightness_names;
+                            current_index <=> AuraPageData.brightness;
+                            current_value: AuraPageData.brightness >= 0 && AuraPageData.brightness < AuraPageData.brightness_names.length
+                                ? AuraPageData.brightness_names[AuraPageData.brightness] : "";
+                            selected => {
+                                AuraPageData.cb_brightness(AuraPageData.brightness);
+                            }
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: Theme.space-xs;
+                        Text {
+                            text: @tr("Effect");
+                            font-size: Theme.font-sm;
+                            color: Theme.text-muted;
+                        }
+                        ComboBox {
+                            model <=> AuraPageData.available_mode_names;
+                            current_index <=> AuraPageData.current_available_mode;
+                            current_value: AuraPageData.current_available_mode >= 0
+                                && AuraPageData.current_available_mode < AuraPageData.available_mode_names.length
+                                ? AuraPageData.available_mode_names[AuraPageData.current_available_mode] : "";
+                            selected => {
+                                AuraPageData.apply_effect({
+                                    mode: root.aura_mode_value(),
+                                    zone: AuraPageData.led_mode_data.zone,
+                                    colour1: AuraPageData.led_mode_data.colour1,
+                                    colour2: AuraPageData.led_mode_data.colour2,
+                                    speed: AuraPageData.led_mode_data.speed,
+                                    direction: AuraPageData.led_mode_data.direction,
+                                });
+                            }
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: Theme.space-xs;
+                        Text {
+                            text: @tr("Speed");
+                            font-size: Theme.font-sm;
+                            color: Theme.text-muted;
+                        }
+                        ComboBox {
+                            enabled: AuraPageData.speed_enabled;
+                            model <=> AuraPageData.speed_names;
+                            current_index <=> AuraPageData.speed;
+                            current_value: AuraPageData.speed >= 0 && AuraPageData.speed < AuraPageData.speed_names.length
+                                ? AuraPageData.speed_names[AuraPageData.speed] : "";
+                            selected => {
+                                AuraPageData.apply_effect({
+                                    mode: AuraPageData.led_mode_data.mode,
+                                    zone: AuraPageData.led_mode_data.zone,
+                                    colour1: AuraPageData.led_mode_data.colour1,
+                                    colour2: AuraPageData.led_mode_data.colour2,
+                                    speed: AuraPageData.speed,
+                                    direction: AuraPageData.led_mode_data.direction,
+                                });
+                            }
+                        }
+                    }
+
+                    VerticalLayout {
+                        spacing: Theme.space-xs;
+                        Text {
+                            text: @tr("Colour");
+                            font-size: Theme.font-sm;
+                            color: Theme.text-muted;
+                        }
+                        HorizontalLayout {
+                            spacing: Theme.space-sm;
+                            alignment: start;
+                            ColourSwatch {
+                                colour: AuraPageData.colorbox1;
+                                clicked => {
+                                    root.nav-target = Pages.aura;
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {}
+                    LinkButton {
+                        label: @tr("More");
+                        clicked => {
+                            root.nav-target = Pages.aura;
+                        }
+                    }
+                }
+            }
+
+            // ─────────────── Slash lighting ───────────────
+            if root.show_slash: SectionCard {
+                SectionHeader {
+                    icon: "✨";
+                    accent: Theme.accent-slash;
+                    title: @tr("Slash lighting");
+                    status: SlashPageData.enabled ? "" : @tr("slash_off" => "Off");
+                }
+
+                HorizontalLayout {
+                    spacing: Theme.space-lg;
+
+                    Switch {
+                        text: @tr("Enable");
+                        checked <=> SlashPageData.enabled;
+                        toggled => {
+                            SlashPageData.cb_enabled(SlashPageData.enabled);
+                        }
+                    }
+
+                    if SlashPageData.mode_choices.length > 0: ComboBox {
+                        min-width: 150px;
+                        model <=> SlashPageData.mode_choices;
+                        current_index <=> SlashPageData.mode;
+                        current_value: SlashPageData.mode >= 0 && SlashPageData.mode < SlashPageData.mode_choices.length
+                            ? SlashPageData.mode_choices[SlashPageData.mode] : "";
+                        enabled: SlashPageData.enabled;
+                        selected => {
+                            SlashPageData.cb_mode(SlashPageData.mode);
+                        }
+                    }
+
+                    Rectangle {}
+                    LinkButton {
+                        label: @tr("More");
+                        clicked => {
+                            root.nav-target = Pages.slash;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

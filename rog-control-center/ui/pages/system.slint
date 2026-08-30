@@ -1,16 +1,13 @@
 import { SystemSlider, SystemDropdown, SystemToggle, SystemToggleInt, RogItem } from "../widgets/common.slint";
-import { Palette, HorizontalBox , VerticalBox, ScrollView, Slider, Button, Switch, ComboBox, GroupBox, StandardButton} from "std-widgets.slint";
+import { Button, HorizontalBox, ScrollView, Slider, Switch } from "std-widgets.slint";
+import { SectionCard, PageHeader, InfoBanner } from "../widgets/modern.slint";
+import { Theme } from "../widgets/theme.slint";
 import { FanPageData } from "../types/fan_types.slint";
 
 export struct AttrMinMax {
   min: int,
   max: int,
   current: float,
-}
-
-export struct AttrPossible {
-  range: [int],
-  current: int,
 }
 
 export global SystemPageData {
@@ -174,6 +171,13 @@ export global SystemPageData {
     in-out property <float> igpu_usage_val: -1.0;
     in-out property <bool> has_igpu: false;
     in-out property <bool> dgpu_suspended: false;
+
+    // Temperature text colour: red above 80°C, amber above 65°C, green below.
+    public pure function temp_color(temp: float) -> color {
+        if (temp > 80) { return Theme.status-danger; }
+        if (temp > 65) { return Theme.status-warn; }
+        return Theme.status-ok;
+    }
 }
 
 export component PageSystem inherits Rectangle {
@@ -198,153 +202,136 @@ export component PageSystem inherits Rectangle {
 
     ScrollView {
         VerticalLayout {
-            padding: 12px;
-            spacing: 8px;
+            padding: Theme.space-lg;
+            spacing: Theme.space-sm;
             alignment: LayoutAlignment.start;
-            Rectangle {
-                background: Palette.alternate-background;
-                border-color: Palette.border;
-                border-width: 1px;
-                border-radius: 2px;
-                height: 36px;
-                Text {
-                    font-size: 16px;
-                    color: Palette.control-foreground;
-                    horizontal-alignment: TextHorizontalAlignment.center;
-                    text: @tr("Power settings");
-                }
+
+            PageHeader {
+                icon: "🎛";
+                title: @tr("Power settings");
             }
 
-
-            if SystemPageData.cpu_usage_val != -1.0: Rectangle {
-                background: Palette.alternate-background;
-                border-color: Palette.border;
-                border-width: 1px;
-                border-radius: 4px;
-
+            if SystemPageData.cpu_usage_val != -1.0: SectionCard {
                 VerticalLayout {
-                    padding: 12px;
-                    spacing: 12px;
+                    spacing: Theme.space-sm;
 
-                    HorizontalLayout {
-                        alignment: LayoutAlignment.start;
-                        spacing: 8px;
-                        Text {
-                            font-size: 14px;
-                            font-weight: 700;
-                            color: Palette.accent-background;
-                            text: @tr("Hardware Monitor");
-                        }
+                    Text {
+                        font-size: Theme.font-base;
+                        font-weight: 700;
+                        color: Theme.accent;
+                        text: @tr("Hardware Monitor");
                     }
 
                     HorizontalLayout {
-                        spacing: 16px;
-                        
+                        spacing: Theme.space-lg;
+
                         // Left Column: CPU & Memory
                         VerticalLayout {
                             width: 50%;
-                            spacing: 8px;
-                            
+                            spacing: Theme.space-sm;
+
                             Text {
                                 text: SystemPageData.cpu_name != "" ? (@tr("CPU Status") + " | " + SystemPageData.cpu_name) : @tr("CPU Status");
                                 font-weight: 700;
-                                color: Palette.control-foreground;
-                                font-size: 12px;
+                                color: Theme.text-control;
+                                font-size: Theme.font-sm;
+                                overflow: elide;
                             }
-                            
+
                             HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("Temperature:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: Math.round(SystemPageData.cpu_temp_val) + " °C";
                                     font-weight: 700;
-                                    color: SystemPageData.cpu_temp_val > 80 ? #ef4444 : (SystemPageData.cpu_temp_val > 65 ? #eab308 : #22c55e);
+                                    color: SystemPageData.temp_color(SystemPageData.cpu_temp_val);
                                 }
                             }
-                            
+
                             HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("Usage:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: Math.round(SystemPageData.cpu_usage_val) + "%";
                                     font-weight: 700;
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                             }
-                            
+
                             HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("Frequency:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: Math.round(SystemPageData.cpu_freq_mhz) + " MHz";
                                     font-weight: 700;
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                             }
 
-                            if SystemPageData.has_igpu: Rectangle { height: 4px; } // divider spacer
+                            if SystemPageData.has_igpu: Rectangle { height: Theme.space-xs; } // divider spacer
 
                             if SystemPageData.has_igpu: Text {
                                 text: SystemPageData.igpu_name != "" ? (@tr("iGPU Status") + " | " + SystemPageData.igpu_name) : @tr("iGPU Status");
                                 font-weight: 700;
-                                color: Palette.control-foreground;
-                                font-size: 12px;
+                                color: Theme.text-control;
+                                font-size: Theme.font-sm;
+                                overflow: elide;
                             }
-                            
+
                             if SystemPageData.has_igpu: HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("Temperature:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: SystemPageData.igpu_temp_val > 0.0 ? (Math.round(SystemPageData.igpu_temp_val) + " °C") : @tr("N/A");
                                     font-weight: 700;
-                                    color: SystemPageData.igpu_temp_val > 80 ? #ef4444 : (SystemPageData.igpu_temp_val > 65 ? #eab308 : (SystemPageData.igpu_temp_val > 0.0 ? #22c55e : Palette.control-foreground));
+                                    color: SystemPageData.igpu_temp_val > 0.0 ? SystemPageData.temp_color(SystemPageData.igpu_temp_val) : Theme.text-control;
                                 }
                             }
-                            
+
                             if SystemPageData.has_igpu: HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("Usage:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: SystemPageData.igpu_usage_val >= 0.0 ? (Math.round(SystemPageData.igpu_usage_val) + "%") : @tr("N/A");
                                     font-weight: 700;
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                             }
 
-                            Rectangle { height: 4px; } // divider spacer
+                            Rectangle { height: Theme.space-xs; } // divider spacer
 
                             Text {
                                 text: @tr("Memory Status");
                                 font-weight: 700;
-                                color: Palette.control-foreground;
-                                font-size: 12px;
+                                color: Theme.text-control;
+                                font-size: Theme.font-sm;
                             }
-                            
+
                             HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("RAM Usage:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: Math.round(SystemPageData.ram_usage_val) + "%";
                                     font-weight: 700;
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                             }
                             // Elastic spacer to push all layout elements to the top when the columns have mismatched heights
@@ -354,73 +341,74 @@ export component PageSystem inherits Rectangle {
                         // Right Column: GPU & Fans
                         VerticalLayout {
                             width: 50%;
-                            spacing: 8px;
-                            
+                            spacing: Theme.space-sm;
+
                             if SystemPageData.has_dgpu: Text {
                                 text: SystemPageData.dgpu_name != "" ? (@tr("dGPU Status") + " | " + SystemPageData.dgpu_name) : @tr("dGPU Status");
                                 font-weight: 700;
-                                color: Palette.control-foreground;
-                                font-size: 12px;
+                                color: Theme.text-control;
+                                font-size: Theme.font-sm;
+                                overflow: elide;
                             }
-                            
+
                             if SystemPageData.has_dgpu: HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("Temperature:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: SystemPageData.dgpu_suspended ? @tr("Suspended") : (SystemPageData.gpu_temp_val >= 0.0 ? (Math.round(SystemPageData.gpu_temp_val) + " °C") : @tr("N/A"));
                                     font-weight: 700;
-                                    color: SystemPageData.dgpu_suspended ? Palette.control-foreground : (SystemPageData.gpu_temp_val > 80 ? #ef4444 : (SystemPageData.gpu_temp_val > 65 ? #eab308 : (SystemPageData.gpu_temp_val >= 0.0 ? #22c55e : Palette.control-foreground)));
+                                    color: SystemPageData.dgpu_suspended || SystemPageData.gpu_temp_val < 0.0 ? Theme.text-control : SystemPageData.temp_color(SystemPageData.gpu_temp_val);
                                 }
                             }
-                            
+
                             if SystemPageData.has_dgpu: HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("Usage:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: SystemPageData.dgpu_suspended ? @tr("Suspended") : (SystemPageData.gpu_usage_val >= 0.0 ? (Math.round(SystemPageData.gpu_usage_val) + "%") : @tr("N/A"));
                                     font-weight: 700;
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                             }
 
-                            if SystemPageData.has_dgpu: Rectangle { height: 4px; } // divider spacer
+                            if SystemPageData.has_dgpu: Rectangle { height: Theme.space-xs; } // divider spacer
 
                             Text {
                                 text: @tr("Fan Speeds");
                                 font-weight: 700;
-                                color: Palette.control-foreground;
-                                font-size: 12px;
+                                color: Theme.text-control;
+                                font-size: Theme.font-sm;
                             }
-                            
+
                             HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("CPU Fan:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: SystemPageData.cpu_fan_rpm + " RPM";
                                     font-weight: 700;
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                             }
-                            
+
                             if SystemPageData.has_dgpu: HorizontalLayout {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("GPU Fan:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: SystemPageData.gpu_fan_rpm + " RPM";
                                     font-weight: 700;
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                             }
 
@@ -428,12 +416,12 @@ export component PageSystem inherits Rectangle {
                                 alignment: LayoutAlignment.space-between;
                                 Text {
                                     text: @tr("Mid Fan:");
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                                 Text {
                                     text: SystemPageData.mid_fan_rpm + " RPM";
                                     font-weight: 700;
-                                    color: Palette.control-foreground;
+                                    color: Theme.text-control;
                                 }
                             }
                             // Elastic spacer to push all layout elements to the top when the columns have mismatched heights
@@ -444,7 +432,7 @@ export component PageSystem inherits Rectangle {
             }
 
             if SystemPageData.platform_profile != -1: HorizontalLayout {
-                spacing: 10px;
+                spacing: Theme.space-sm;
                 SystemDropdown {
                     text: @tr("Platform Profile");
                     current_index <=> SystemPageData.platform_profile;
@@ -466,16 +454,16 @@ export component PageSystem inherits Rectangle {
 
             if SystemPageData.screenpad_brightness != -1: RogItem {
                 HorizontalLayout {
-                    padding-left: 10px;
-                    padding-right: 20px;
+                    padding-left: Theme.space-md;
+                    padding-right: Theme.space-lg;
                     HorizontalLayout {
                         width: 40%;
                         alignment: LayoutAlignment.space-between;
-                        padding-right: 15px;
+                        padding-right: Theme.space-md;
                         Text {
-                            font-size: 14px;
+                            font-size: Theme.font-base;
                             vertical-alignment: TextVerticalAlignment.center;
-                            color: Palette.control-foreground;
+                            color: Theme.text-control;
                             text: @tr("Screenpad brightness");
                         }
                     }
@@ -483,21 +471,20 @@ export component PageSystem inherits Rectangle {
                     HorizontalLayout {
                         width: 38%;
                         alignment: LayoutAlignment.stretch;
-                        screen_bright := Slider {
+                        Slider {
                             enabled: true;
                             minimum: 0;
                             maximum: 100;
                             value: SystemPageData.screenpad_brightness;
                             released(value) => {
-                                // SystemPageData.screenpad_brightness = self.value;
                                 SystemPageData.cb_screenpad_brightness(Math.floor(self.value));
                             }
                         }
                     }
 
                     HorizontalLayout {
-                    width: 20%;
-                    padding-left: 14px;
+                        width: 20%;
+                        padding-left: Theme.space-md;
                         alignment: LayoutAlignment.stretch;
                         Switch {
                             text: @tr("Sync with primary");
@@ -510,44 +497,20 @@ export component PageSystem inherits Rectangle {
                 }
             }
 
-            Rectangle {
-                background: Palette.alternate-background;
-                border-color: Palette.border;
-                border-width: 1px;
-                border-radius: 2px;
-                height: 36px;
-                Text {
-                    font-size: 16px;
-                    color: Palette.control-foreground;
-                    horizontal-alignment: TextHorizontalAlignment.center;
-                    text: @tr("Armoury settings");
-                }
+            PageHeader {
+                icon: "🛡";
+                title: @tr("Armoury settings");
             }
 
-            if !SystemPageData.asus_armoury_loaded: Rectangle {
-                background: maroon;
-                // background: darkred;
-                max-height: 30px;
-                VerticalBox {
-                    Text {
-                        text: @tr("no_asus_armoury_driver_1" => "The asus-armoury driver is not loaded");
-                        font-size: 16px;
-                        color: white;
-                        horizontal-alignment: TextHorizontalAlignment.center;
-                    }
-
-                    Text {
-                        text: @tr("no_asus_armoury_driver_2" => "For advanced features you will require a kernel with this driver added.");
-                        font-size: 16px;
-                        color: white;
-                        horizontal-alignment: TextHorizontalAlignment.center;
-                    }
-                }
+            if !SystemPageData.asus_armoury_loaded: InfoBanner {
+                danger: true;
+                text: @tr("no_asus_armoury_driver_1" => "The asus-armoury driver is not loaded")
+                    + " — " + @tr("no_asus_armoury_driver_2" => "For advanced features you will require a kernel with this driver added.");
             }
 
             HorizontalBox {
                 padding: 0px;
-                spacing: 10px;
+                spacing: Theme.space-sm;
                 if SystemPageData.panel_overdrive != -1: SystemToggleInt {
                     text: @tr("Panel Overdrive");
                     checked_int <=> SystemPageData.panel_overdrive;
@@ -593,13 +556,13 @@ export component PageSystem inherits Rectangle {
             }
 
             if (SystemPageData.ppt_pl1_spl.max > 0 && SystemPageData.ppt_pl1_spl.current != -1) || (SystemPageData.ppt_pl2_sppt.max > 0 && SystemPageData.ppt_pl2_sppt.current != -1) || (SystemPageData.ppt_pl3_fppt.max > 0 && SystemPageData.ppt_pl3_fppt.current != -1) || (SystemPageData.ppt_fppt.max > 0 && SystemPageData.ppt_fppt.current != -1) || (SystemPageData.ppt_apu_sppt.max > 0 && SystemPageData.ppt_apu_sppt.current != -1) || (SystemPageData.nv_tgp.max > 0 && SystemPageData.nv_tgp.current != -1) || (SystemPageData.nv_temp_target.max > 0 && SystemPageData.nv_temp_target.current != -1) || (SystemPageData.nv_dynamic_boost.max > 0 && SystemPageData.nv_dynamic_boost.current != -1): HorizontalLayout {
-                padding-right: 10px;
-                padding-left: 10px;
+                padding-right: Theme.space-sm;
+                padding-left: Theme.space-sm;
                 alignment: LayoutAlignment.space-between;
                 Rectangle {
                     height: 32px;
                     Text {
-                        font-size: 16px;
+                        font-size: Theme.font-base;
                         text: @tr("ppt_warning" => "The following settings are not applied until the toggle is enabled.");
                     }
                 }
@@ -623,18 +586,9 @@ export component PageSystem inherits Rectangle {
                 }
             }
 
-            if !fan_curve_active: Rectangle {
-                background: #665500;
-                max-height: 30px;
-                VerticalBox {
-                    Text {
-                        text: @tr("requires_fan_curve_warning" => "CPU power limits require an active custom fan curve. Enable a fan curve for the active profile in the Fans tab to unlock these controls.");
-                        font-size: 14px;
-                        color: white;
-                        horizontal-alignment: TextHorizontalAlignment.center;
-                        wrap: word-wrap;
-                    }
-                }
+            if !fan_curve_active && (SystemPageData.ppt_pl1_spl.max > 0 || SystemPageData.ppt_pl2_sppt.max > 0 || SystemPageData.ppt_pl3_fppt.max > 0 || SystemPageData.ppt_fppt.max > 0 || SystemPageData.ppt_apu_sppt.max > 0 || SystemPageData.nv_tgp.max > 0 || SystemPageData.nv_temp_target.max > 0 || SystemPageData.nv_dynamic_boost.max > 0): InfoBanner {
+                warning: true;
+                text: @tr("requires_fan_curve_warning" => "CPU power limits require an active custom fan curve. Enable a fan curve for the active profile in the Fans tab to unlock these controls.");
             }
 
             if SystemPageData.ppt_pl1_spl.max > 0 && SystemPageData.ppt_pl1_spl.current != -1: SystemSlider {
@@ -803,13 +757,12 @@ export component PageSystem inherits Rectangle {
     if root.show_fade_cover: Rectangle {
         width: 100%;
         height: 100%;
-        background: Palette.background;
+        background: Theme.surface;
         opacity: 0.9;
         TouchArea {
             height: 100%;
             width: 100%;
             clicked => {
-                // toolbar-dropdown.close();
                 if (root.show_throttle_advanced) {
                     root.show_throttle_advanced = false;
                 }
@@ -819,25 +772,23 @@ export component PageSystem inherits Rectangle {
     }
 
     if root.show_throttle_advanced: Rectangle {
-        background: Palette.background;
+        background: Theme.surface;
         width: 100%;
         height: 100%;
         opacity: 1;
         ScrollView {
             VerticalLayout {
                 alignment: start;
-                padding: 5px;
-                padding-top: 15px;
-                spacing: 10px;
-                GroupBox {
-                    VerticalBox {
+                padding: Theme.space-lg;
+                spacing: Theme.space-md;
+                SectionCard {
+                    pad: Theme.space-lg;
+                    VerticalLayout {
                         alignment: start;
-                        spacing: 10px;
-                        Text {
-                            font-size: 16px;
-                            horizontal-alignment: TextHorizontalAlignment.center;
-                            vertical-alignment: TextVerticalAlignment.center;
-                            text: @tr("Energy Performance Preference linked to Throttle Policy");
+                        spacing: Theme.space-sm;
+                        PageHeader {
+                            icon: "⚡";
+                            title: @tr("Energy Performance Preference linked to Throttle Policy");
                         }
 
                         SystemToggle {
@@ -880,19 +831,18 @@ export component PageSystem inherits Rectangle {
                     }
                 }
 
-                GroupBox {
-                    VerticalBox {
+                SectionCard {
+                    pad: Theme.space-lg;
+                    VerticalLayout {
                         alignment: start;
-                        spacing: 10px;
-                        Text {
-                            font-size: 16px;
-                            horizontal-alignment: TextHorizontalAlignment.center;
-                            vertical-alignment: TextVerticalAlignment.center;
-                            text: @tr("Throttle Policy for power state");
+                        spacing: Theme.space-sm;
+                        PageHeader {
+                            icon: "🔌";
+                            title: @tr("Throttle Policy for power state");
                         }
 
                         HorizontalLayout {
-                            spacing: 10px;
+                            spacing: Theme.space-sm;
                             SystemDropdown {
                                 text: @tr("Throttle Policy on Battery");
                                 current_index <=> SystemPageData.platform_profile_on_battery;
@@ -913,7 +863,7 @@ export component PageSystem inherits Rectangle {
                         }
 
                         HorizontalLayout {
-                            spacing: 10px;
+                            spacing: Theme.space-sm;
                             SystemDropdown {
                                 text: @tr("Throttle Policy on AC");
                                 current_index <=> SystemPageData.platform_profile_on_ac;
@@ -938,8 +888,8 @@ export component PageSystem inherits Rectangle {
         }
 
         Button {
-            x: root.width - self.width - 6px;
-            y: 6px;
+            x: root.width - self.width - Theme.space-sm;
+            y: Theme.space-sm;
             text: "✕";
             height: 34px;
             clicked => {

@@ -183,7 +183,7 @@ msgstr "Zone di Alimentazione"
 
 #: rog-control-center/ui/pages/fans.slint:27
 msgctxt "FanTab"
-msgid "This fan is not avilable on this machine"
+msgid "This fan is not available on this machine"
 msgstr "Questa ventola non è disponibile su questa macchina"
 
 #: rog-control-center/ui/pages/fans.slint:42

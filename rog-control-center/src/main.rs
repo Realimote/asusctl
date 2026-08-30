@@ -38,6 +38,10 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    if cli_parsed.demo {
+        return rog_control_center::demo::run();
+    }
+
     // If we're running under gamescope we have to set WAYLAND_DISPLAY for winit to
     // use
     if let Ok(gamescope) = env::var("GAMESCOPE_WAYLAND_DISPLAY") {
@@ -142,12 +146,6 @@ fn main() -> Result<()> {
         }
     };
 
-    let is_tuf = {
-        let b = board_name.to_lowercase();
-        let p = prod_family.to_lowercase();
-        b.contains("tuf") || p.contains("tuf")
-    };
-
     #[cfg(feature = "rog_ally")]
     if is_rog_ally {
         config.notifications.enabled = false;
@@ -199,7 +197,6 @@ fn main() -> Result<()> {
         config.clone(),
         prefetched_supported.clone(),
         app_state.clone(),
-        is_tuf,
     );
 
     let shortcut_service = if is_rog_ally {
@@ -240,7 +237,6 @@ fn main() -> Result<()> {
                         config.clone(),
                         prefetched_supported.clone(),
                         app_state.clone(),
-                        is_tuf,
                         None,
                     );
                     newui.window().on_close_requested(move || {

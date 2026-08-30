@@ -1,6 +1,7 @@
 import { SystemDropdown, RogItem, SystemToggle, SystemToggleVert } from "../widgets/common.slint";
-import { Palette, Button, ComboBox, VerticalBox, GroupBox } from "std-widgets.slint";
-import { StyleMetrics, Slider, HorizontalBox, TextEdit, SpinBox, LineEdit, ScrollView } from "std-widgets.slint";
+import { Button, ComboBox, VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
+import { PageHeader } from "../widgets/modern.slint";
+import { Theme } from "../widgets/theme.slint";
 import { ColourSlider } from "../widgets/colour_picker.slint";
 import { AuraPageData, AuraDevType, PowerZones, LaptopAuraPower, AuraEffect } from "../types/aura_types.slint";
 import { AuraPowerGroup, AuraPowerGroupOld } from "../widgets/aura_power.slint";
@@ -20,11 +21,17 @@ export component PageAura inherits Rectangle {
 
     ScrollView {
         VerticalLayout {
-            padding: 10px;
-            spacing: 10px;
+            padding: Theme.space-lg;
+            spacing: Theme.space-sm;
             alignment: LayoutAlignment.start;
+
+            PageHeader {
+                icon: "🌈";
+                title: @tr("Aura mode");
+            }
+
             HorizontalLayout {
-                spacing: 10px;
+                spacing: Theme.space-sm;
                 SystemDropdown {
                     text: @tr("Brightness");
                     current_index <=> AuraPageData.brightness;
@@ -59,7 +66,7 @@ export component PageAura inherits Rectangle {
                 max-height: 400px;
                 HorizontalLayout {
                     padding-top: 5px;
-                    spacing: 10px;
+                    spacing: Theme.space-sm;
                     VerticalBox {
                         Text {
                             text: @tr("Colour 1");
@@ -112,7 +119,7 @@ export component PageAura inherits Rectangle {
             }
 
             HorizontalLayout {
-                spacing: 10px;
+                spacing: Theme.space-sm;
                 min-height: 80px;
                 max-height: 90px;
                 RogItem {
@@ -181,8 +188,10 @@ export component PageAura inherits Rectangle {
             }
 
             HorizontalLayout {
+                alignment: LayoutAlignment.end;
                 Button {
                     text: @tr("Power Settings");
+                    min-width: 120px;
                     clicked => {
                         root.show_fade_cover = true;
                         root.show_aura_power = true;
@@ -192,7 +201,7 @@ export component PageAura inherits Rectangle {
         }
 
         if root.show_fade_cover: Rectangle {
-            background: Palette.background;
+            background: Theme.surface;
             opacity: 0.8;
             TouchArea {
                 height: 100%;
@@ -202,15 +211,15 @@ export component PageAura inherits Rectangle {
     }
 
     if root.show_aura_power && AuraPageData.device_type == AuraDevType.New: Rectangle {
-        background: Palette.background;
+        background: Theme.surface;
         width: 100%;
         height: 100%;
         opacity: 1;
         ScrollView {
             VerticalLayout {
-                padding: 30px;
-                padding-top: 10px;
-                spacing: 10px;
+                padding: Theme.space-xl;
+                padding-top: Theme.space-md;
+                spacing: Theme.space-sm;
                 alignment: LayoutAlignment.start;
 
                 for state[idx] in AuraPageData.led_power.states: zone := AuraPowerGroup {
@@ -246,15 +255,15 @@ export component PageAura inherits Rectangle {
     // appropriately for TUF devices. This ensures the Power Settings panel
     // reflects what the firmware reports for TUF models.
     if root.show_aura_power && AuraPageData.device_type == AuraDevType.Tuf: Rectangle {
-        background: Palette.background;
+        background: Theme.surface;
         width: 100%;
         height: 100%;
         opacity: 1;
         ScrollView {
             VerticalLayout {
-                padding: 30px;
-                padding-top: 10px;
-                spacing: 10px;
+                padding: Theme.space-xl;
+                padding-top: Theme.space-md;
+                spacing: Theme.space-sm;
                 alignment: LayoutAlignment.start;
 
                 for state[idx] in AuraPageData.led_power.states: tuf_zone := AuraPowerGroup {
@@ -285,15 +294,15 @@ export component PageAura inherits Rectangle {
     }
 
     if root.show_aura_power && AuraPageData.device_type == AuraDevType.Old: Rectangle {
-        background: Palette.background;
+        background: Theme.surface;
         width: 100%;
         height: 100%;
         opacity: 1;
         ScrollView {
             VerticalLayout {
-                padding: 30px;
-                padding-top: 10px;
-                spacing: 10px;
+                padding: Theme.space-xl;
+                padding-top: Theme.space-md;
+                spacing: Theme.space-sm;
                 alignment: LayoutAlignment.start;
 
                 Text {
@@ -328,8 +337,8 @@ export component PageAura inherits Rectangle {
     }
 
     if root.show_aura_power: Button {
-        x: root.width - self.width - 6px;
-        y: 6px;
+        x: root.width - self.width - Theme.space-sm;
+        y: Theme.space-sm;
         text: "✕";
         height: 36px;
         clicked => {

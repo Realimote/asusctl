@@ -185,7 +185,7 @@ msgstr "区域供电"
 
 #: rog-control-center/ui/pages/fans.slint:27
 msgctxt "FanTab"
-msgid "This fan is not avilable on this machine"
+msgid "This fan is not available on this machine"
 msgstr "该风扇在本机不可用"
 
 #: rog-control-center/ui/pages/fans.slint:42
@@ -241,7 +241,7 @@ msgstr "省电"
 #: rog-control-center/ui/pages/slash.slint:51
 msgctxt "PageSlash"
 msgid "Slash lighting"
-msgstr ""
+msgstr "Slash 灯带"
 
 #: rog-control-center/ui/pages/slash.slint:56
 msgctxt "PageSlash"
@@ -1259,3 +1259,217 @@ msgstr "退出"
 #~ msgctxt "MainWindow"
 #~ msgid "ROG"
 #~ msgstr "ROG"
+
+# ── Dashboard / modern UI ────────────────────────────────────────────
+# NOTE: plain @tr() inside a Slint component resolves with the component
+# name as msgctxt (e.g. "PageDashboard"), so these entries must match it.
+
+#: rog-control-center/ui/main_window.slint
+msgctxt "Menu0"
+msgid "Dashboard"
+msgstr "仪表盘"
+
+#: rog-control-center/ui/main_window.slint
+msgctxt "Menu1"
+msgid "System"
+msgstr "系统"
+
+#: rog-control-center/ui/main_window.slint
+msgctxt "Menu2"
+msgid "Aura"
+msgstr "灯效"
+
+#: rog-control-center/ui/main_window.slint
+msgctxt "Menu3"
+msgid "AniMe"
+msgstr "AniMe"
+
+#: rog-control-center/ui/main_window.slint
+msgctxt "Menu4"
+msgid "Slash"
+msgstr "灯带"
+
+#: rog-control-center/ui/main_window.slint
+msgctxt "Menu5"
+msgid "Fans"
+msgstr "风扇"
+
+#: rog-control-center/ui/main_window.slint
+msgctxt "Menu6"
+msgid "GPU"
+msgstr "显卡"
+
+#: rog-control-center/ui/main_window.slint
+msgctxt "Menu7"
+msgid "Settings"
+msgstr "设置"
+
+#: rog-control-center/ui/main_window.slint
+msgctxt "Menu9"
+msgid "Battery"
+msgstr "电池"
+
+#: rog-control-center/ui/widgets/sidebar.slint
+msgctxt "SideBar"
+msgid "Quit App"
+msgstr "退出"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Performance mode"
+msgstr "性能模式"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Balanced"
+msgstr "平衡"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Performance"
+msgstr "性能"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Quiet"
+msgstr "省电"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Low-Power"
+msgstr "低功耗"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Custom"
+msgstr "自定义"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Fan + Power"
+msgstr "风扇 + 功率"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "fan_unit"
+msgid "Fan"
+msgstr "风扇"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "GPU mode"
+msgstr "显卡模式"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "gpumode"
+msgid "iGPU only"
+msgstr "仅核显"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "gpumode"
+msgid "dGPU only"
+msgstr "独显直连"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "gpumode"
+msgid "Hybrid"
+msgstr "混合模式"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "gpu_suspended"
+msgid "dGPU suspended"
+msgstr "dGPU 已休眠"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "gpu_reboot_hint"
+msgid "GPU mode changes apply after a reboot."
+msgstr "显卡模式更改需重启后生效。"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Display"
+msgstr "屏幕"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "panel_od_on"
+msgid "Overdrive on"
+msgstr "加速已开启"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "panel_od"
+msgid "Panel OD"
+msgstr "面板加速"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Auto brightness"
+msgstr "自动亮度"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "MiniLED Mode"
+msgstr "MiniLED 模式"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Battery"
+msgstr "电池"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "battery_health_unit"
+msgid "% health"
+msgstr "% 健康度"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Charge limit"
+msgstr "充电限制"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Keyboard Aura"
+msgstr "键盘灯效"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Brightness"
+msgstr "亮度"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Effect"
+msgstr "灯效"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Speed"
+msgstr "速度"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Colour"
+msgstr "颜色"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "More"
+msgstr "更多"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Enable"
+msgstr "启用"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "PageDashboard"
+msgid "Slash lighting"
+msgstr "Slash 灯带"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "slash_off"
+msgid "Off"
+msgstr "关闭"
+
+#: rog-control-center/ui/pages/dashboard.slint
+msgctxt "dashboard_empty"
+msgid "No ASUS platform features detected.\nIs asusd running?"
+msgstr "未检测到华硕平台功能。\nasusd 是否正在运行？"

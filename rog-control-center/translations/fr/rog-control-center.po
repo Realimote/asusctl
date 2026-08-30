@@ -187,7 +187,7 @@ msgstr "Zones de puissance"
 
 #: rog-control-center/ui/pages/fans.slint:27
 msgctxt "FanTab"
-msgid "This fan is not avilable on this machine"
+msgid "This fan is not available on this machine"
 msgstr "Ce ventilateur n'est pas disponible sur cette machine"
 
 #: rog-control-center/ui/pages/fans.slint:42

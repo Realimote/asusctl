@@ -1,11 +1,17 @@
-import { Palette, VerticalBox , StandardButton, Button, HorizontalBox, ComboBox, Switch, Slider} from "std-widgets.slint";
+// Row-style controls shared by the settings-like pages: sliders, toggles and
+// dropdowns rendered as rounded cards. Their properties and callbacks are
+// bound from Rust (setup_*.rs) so the public API must stay stable.
+import { Palette, VerticalBox, StandardButton, Button, HorizontalBox, ComboBox, Switch, Slider } from "std-widgets.slint";
+import { Theme } from "theme.slint";
 
+// Base card for a single control row.
 export component RogItem inherits Rectangle {
-    border-color: Palette.border;
+    background: Theme.surface-card;
+    border-color: Theme.border;
     border-width: 1px;
-    border-radius: 2px;
-    min-height: 44px;
-    max-height: 44px;
+    border-radius: Theme.radius-md;
+    min-height: Theme.row-height;
+    max-height: Theme.row-height;
 }
 
 export component SystemSlider inherits RogItem {
@@ -25,28 +31,30 @@ export component SystemSlider inherits RogItem {
         HorizontalLayout {
             width: 40%;
             alignment: LayoutAlignment.stretch;
-            padding-left: 10px;
+            padding-left: Theme.space-md;
             HorizontalLayout {
-                spacing: 6px;
+                spacing: Theme.space-xs;
                 Text {
-                    font-size: 14px;
+                    font-size: Theme.font-base;
                     vertical-alignment: TextVerticalAlignment.center;
-                    color: Palette.control-foreground;
+                    color: Theme.text-control;
                     text: root.text;
+                    overflow: elide;
                 }
 
                 Text {
-                    font-size: 14px;
+                    font-size: Theme.font-base;
+                    font-weight: 600;
                     horizontal-alignment: TextHorizontalAlignment.right;
                     vertical-alignment: TextVerticalAlignment.center;
-                    color: Palette.control-foreground;
+                    color: Theme.text-control;
                     text: "\{Math.round(root.value)}";
                 }
             }
         }
 
         HorizontalBox {
-            padding-right: 10px;
+            padding-right: Theme.space-md;
             slider := Slider {
                 enabled: root.enabled;
                 maximum: root.maximum;
@@ -59,20 +67,20 @@ export component SystemSlider inherits RogItem {
         }
 
         help_popup := PopupWindow {
-            x: help.x - self.width + help.width - 10px;
-            y: help.y - self.height + help.height - 10px;
+            x: help.x - self.width + help.width - Theme.space-sm;
+            y: help.y - self.height + help.height - Theme.space-sm;
             Rectangle {
                 drop-shadow-blur: 10px;
-                drop-shadow-color: black;
-                border-radius: 10px;
-                border-color: Palette.accent-background;
-                background: Palette.background;
+                drop-shadow-color: Colors.black.with-alpha(0.6);
+                border-radius: Theme.radius-lg;
+                border-color: Theme.border;
+                background: Theme.surface;
                 Dialog {
                     title: root.title;
                     VerticalBox {
                         Text {
                             max-width: 420px;
-                            font-size: 18px;
+                            font-size: Theme.font-lg;
                             wrap: TextWrap.word-wrap;
                             horizontal-alignment: TextHorizontalAlignment.center;
                             text: root.title;
@@ -80,13 +88,12 @@ export component SystemSlider inherits RogItem {
 
                         Rectangle {
                             height: 1px;
-                            border-color: black;
-                            border-width: 1px;
+                            background: Theme.border;
                         }
 
                         Text {
                             max-width: 420px;
-                            font-size: 16px;
+                            font-size: Theme.font-base;
                             wrap: TextWrap.word-wrap;
                             text: root.help_text;
                         }
@@ -113,14 +120,14 @@ export component SystemSlider inherits RogItem {
             y: reset.y - self.height + reset.height;
             Rectangle {
                 drop-shadow-blur: 10px;
-                drop-shadow-color: black;
-                border-radius: 10px;
-                border-color: Palette.accent-background;
-                background: Palette.background;
+                drop-shadow-color: Colors.black.with-alpha(0.6);
+                border-radius: Theme.radius-lg;
+                border-color: Theme.border;
+                background: Theme.surface;
                 Dialog {
                     Text {
                         max-width: 420px;
-                        font-size: 16px;
+                        font-size: Theme.font-base;
                         wrap: TextWrap.word-wrap;
                         text: @tr("confirm_reset" => "Are you sure you want to reset this?");
                     }
@@ -157,21 +164,23 @@ export component SystemToggle inherits RogItem {
     in-out property <bool> checked;
     callback toggled(bool);
     HorizontalLayout {
-        spacing: 6px;
+        spacing: Theme.space-xs;
         HorizontalLayout {
             alignment: LayoutAlignment.start;
-            padding-left: 10px;
+            padding-left: Theme.space-md;
             Text {
-                font-size: 14px;
+                font-size: Theme.font-base;
                 vertical-alignment: TextVerticalAlignment.center;
-                color: Palette.control-foreground;
+                color: Theme.text-control;
                 text: root.text;
+                wrap: word-wrap;
+                overflow: elide;
             }
         }
 
         HorizontalLayout {
             alignment: LayoutAlignment.end;
-            padding-right: 20px;
+            padding-right: Theme.space-lg;
             Switch {
                 enabled: root.enabled;
                 checked <=> root.checked;
@@ -189,21 +198,23 @@ export component SystemToggleInt inherits RogItem {
     in-out property <int> checked_int;
     callback toggled(int);
     HorizontalLayout {
-        spacing: 6px;
+        spacing: Theme.space-xs;
         HorizontalLayout {
             alignment: LayoutAlignment.start;
-            padding-left: 10px;
+            padding-left: Theme.space-md;
             Text {
-                font-size: 14px;
+                font-size: Theme.font-base;
                 vertical-alignment: TextVerticalAlignment.center;
-                color: Palette.control-foreground;
+                color: Theme.text-control;
                 text: root.text;
+                wrap: word-wrap;
+                overflow: elide;
             }
         }
 
         HorizontalLayout {
             alignment: LayoutAlignment.end;
-            padding-right: 20px;
+            padding-right: Theme.space-lg;
             Switch {
                 checked: root.checked_int != 0;
                 toggled => {
@@ -222,18 +233,18 @@ export component SystemToggleVert inherits RogItem {
     min-height: 86px;
     VerticalLayout {
         alignment: LayoutAlignment.space-around;
-        padding-top: 8px;
+        padding-top: Theme.space-sm;
         Text {
-            font-size: 14px;
+            font-size: Theme.font-base;
             vertical-alignment: TextVerticalAlignment.bottom;
             horizontal-alignment: TextHorizontalAlignment.center;
-            color: Palette.control-foreground;
+            color: Theme.text-control;
             text: root.text;
         }
 
         HorizontalLayout {
             alignment: LayoutAlignment.center;
-            padding-bottom: 10px;
+            padding-bottom: Theme.space-sm;
             Switch {
                 checked <=> root.checked;
                 toggled => {
@@ -256,18 +267,19 @@ export component SystemDropdown inherits RogItem {
     HorizontalLayout {
         HorizontalLayout {
             alignment: LayoutAlignment.start;
-            padding-left: 10px;
+            padding-left: Theme.space-md;
             Text {
-                font-size: 14px;
+                font-size: Theme.font-base;
                 vertical-alignment: TextVerticalAlignment.center;
-                color: Palette.control-foreground;
+                color: Theme.text-control;
                 text: root.text;
+                overflow: elide;
             }
         }
 
         HorizontalLayout {
             alignment: LayoutAlignment.end;
-            padding-right: 20px;
+            padding-right: Theme.space-lg;
             padding-top: 7px;
             padding-bottom: 7px;
             ComboBox {
@@ -281,59 +293,5 @@ export component SystemDropdown inherits RogItem {
                 }
             }
         }
-    }
-}
-
-export component PopupNotification {
-    in property <string> heading;
-    in property <string> content;
-    _p := PopupWindow {
-        x: root.x;
-        y: root.y;
-        width: root.width;
-        height: root.height;
-        // TODO: add properties to display
-        Rectangle {
-            border-width: 2px;
-            border-color: Palette.accent-background;
-            background: Palette.background;
-
-            VerticalLayout {
-                Dialog {
-                    VerticalLayout {
-                        alignment: start;
-                        Text {
-                            text: heading;
-                            color: Palette.control-foreground;
-                            font-size: 32px;
-                            font-weight: 900;
-                        }
-
-                        Text {
-                            text: content;
-                            color: Palette.control-foreground;
-                            font-size: 18px;
-                        }
-                    }
-
-                    StandardButton {
-                        kind: ok;
-                    }
-
-                    StandardButton {
-                        kind: cancel;
-                    }
-
-                    Button {
-                        text: "More Info";
-                        dialog-button-role: action;
-                    }
-                }
-            }
-        }
-    }
-
-    public function show() {
-        _p.show();
     }
 }

@@ -132,28 +132,26 @@ pub fn setup_window(
     config: Arc<Mutex<Config>>,
     prefetched_supported: std::sync::Arc<Option<Vec<i32>>>,
     app_state: Arc<Mutex<AppState>>,
-    is_tuf: bool,
     shortcuts: Option<ShortcutHandle>,
 ) -> MainWindow {
     slint::set_xdg_app_id(crate::APP_ID)
         .map_err(|e| warn!("Couldn't set application ID: {e:?}"))
         .ok();
     let ui = MainWindow::new().expect("Couldn't create main window");
-    // propagate TUF flag to the UI so the sidebar can swap logo branding
-    ui.set_is_tuf(is_tuf);
     if let Err(e) = ui.window().show() {
         warn!("Couldn't show main window: {e:?}");
     }
 
     let available = list_iface_blocking().unwrap_or_default();
-    ui.set_sidebar_items_avilable(
+    ui.set_sidebar_items_available(
         [
             // Needs to match the order of slint sidebar items
-            available.contains(&"xyz.ljones.Platform".to_string()),
-            available.contains(&"xyz.ljones.Aura".to_string()),
-            available.contains(&"xyz.ljones.Anime".to_string()),
-            available.contains(&"xyz.ljones.Slash".to_string()),
-            available.contains(&"xyz.ljones.FanCurves".to_string()),
+            true, // Dashboard
+            available.contains(&"xyz.ljones.Platform".to_string()), // System Control
+            available.contains(&"xyz.ljones.Aura".to_string()),     // Keyboard Aura
+            available.contains(&"xyz.ljones.Anime".to_string()),    // AniMe Matrix
+            available.contains(&"xyz.ljones.Slash".to_string()),    // Slash Lighting
+            available.contains(&"xyz.ljones.FanCurves".to_string()), // Fan Curves
             true,                                                   // GPU Configuration
             available.contains(&"xyz.ljones.Platform".to_string()), // Battery Info
             true,                                                   // App Settings
@@ -161,6 +159,15 @@ pub fn setup_window(
         ]
         .into(),
     );
+
+    // Show the laptop model in the window title
+    let dmi = dmi_id::DMIID::new().unwrap_or_default();
+    let device_name = if dmi.product_family.is_empty() {
+        dmi.board_name.clone()
+    } else {
+        dmi.product_family.clone()
+    };
+    ui.set_device_name(device_name.into());
 
     ui.on_exit_app(move || {
         if let Err(e) = slint::quit_event_loop() {

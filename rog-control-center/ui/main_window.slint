@@ -1,12 +1,13 @@
 import { Palette, Button, VerticalBox } from "std-widgets.slint";
 import { AppSize } from "globals.slint";
+import { PageDashboard, Pages, NavState } from "pages/dashboard.slint";
 import { PageSystem, SystemPageData, AttrMinMax } from "pages/system.slint";
 import { SideBar } from "widgets/sidebar.slint";
 import { PageAbout } from "pages/about.slint";
 import { PageFans } from "pages/fans.slint";
 import { PageAnime, AnimePageData } from "pages/anime.slint";
 import { PageSlash, SlashPageData } from "pages/slash.slint";
-import { RogItem } from "widgets/common.slint";
+import { Theme } from "widgets/theme.slint";
 import { PageAura } from "pages/aura.slint";
 import { PageGPU, GPUPageData } from "pages/gpu.slint";
 import { PageBattery } from "pages/battery.slint";
@@ -19,28 +20,29 @@ export { AuraPageData, AuraDevType, LaptopAuraPower, AuraPowerState, PowerZones,
 import { PageAppSettings, AppSettingsPageData, GlobalShortcutStatus } from "pages/app_settings.slint";
 
 export { AppSize, AttrMinMax, SystemPageData, AnimePageData, SlashPageData, AppSettingsPageData, GlobalShortcutStatus, GPUPageData }
+export { NavState, Pages }
 
 export component MainWindow inherits Window {
-    title: "ROG Control";
+    title: device_name != "" ? "ROG Control Center — " + device_name : "ROG Control Center";
     always-on-top: true;
     default-font-family: "Noto Sans";
-    default-font-size: 14px;
+    default-font-size: Theme.font-base;
     default-font-weight: 400;
     icon: @image-url("../data/rog-control-center.png");
-    in property <[bool]> sidebar_items_avilable: [
-        true,
-        true,
-        true,
-        true,
-        true,
+    in property <[bool]> sidebar_items_available: [
+        true, // Dashboard
+        true, // System Control
+        true, // Keyboard Aura
+        true, // AniMe Matrix
+        true, // Slash Lighting
+        true, // Fan Curves
         true, // GPU Configuration
         true, // Battery Info
         true, // App Settings
         true, // About
     ];
     private property <bool> show_notif;
-    // TODO: change if TUF on the logo in the menu on the main page
-    in property <bool> is_tuf: false;
+    in property <string> device_name: "";
     private property <bool> fade_cover;
     private property <bool> toast: false;
     private property <string> toast_text: "I show when something is waiting";
@@ -65,105 +67,127 @@ export component MainWindow inherits Window {
     callback external_colour_change();
     external_colour_change() => {
         aura.external_colour_change();
-        aura.external_colour_change();
     }
-    min-height: AppSize.height;
-    min-width: AppSize.width;
-    background: Palette.alternate-background;
+
+    init => {
+        // The whole app is designed for the dark dashboard look.
+        Palette.color-scheme = ColorScheme.dark;
+    }
+
+    width: AppSize.width;
+    height: AppSize.height;
+    background: Theme.surface-card;
 
     HorizontalLayout {
         padding: 0px;
-        VerticalLayout {
-            padding: 0px;
-            side-bar := SideBar {
-                model: [
-                    @tr("Menu1" => "System Control"),
-                    @tr("Menu2" => "Keyboard Aura"),
-                    @tr("Menu3" => "AniMe Matrix"),
-                    @tr("Menu4" => "Slash Lighting"),
-                    @tr("Menu5" => "Fan Curves"),
-                    @tr("Menu6" => "GPU Configuration"),
-                    @tr("Menu9" => "Battery Info"),
-                    @tr("Menu7" => "App Settings"),
-                    @tr("Menu8" => "About"),
-                ];
-                available: root.sidebar_items_avilable;
-                is_tuf: root.is_tuf;
-            }
 
-            Button {
-                height: 40px;
-                width: side-bar.width;
-                text: @tr("Quit App");
-                clicked() => {
-                    root.exit-app();
-                }
+        side-bar := SideBar {
+            current-item <=> NavState.page;
+            model: [
+                @tr("Menu0" => "Dashboard"),
+                @tr("Menu1" => "System"),
+                @tr("Menu2" => "Aura"),
+                @tr("Menu3" => "AniMe"),
+                @tr("Menu4" => "Slash"),
+                @tr("Menu5" => "Fans"),
+                @tr("Menu6" => "GPU"),
+                @tr("Menu9" => "Battery"),
+                @tr("Menu7" => "Settings"),
+                @tr("Menu8" => "About"),
+            ];
+            icons: [
+                "🏠",
+                "🎛",
+                "🌈",
+                "📺",
+                "✨",
+                "🌀",
+                "🎮",
+                "🔋",
+                "🔧",
+                "ℹ",
+            ];
+            available: root.sidebar_items_available;
+            exit-app => {
+                root.exit-app();
             }
         }
 
         Rectangle {
-            background: Palette.background;
-            if(side-bar.current-item == 0): page := PageSystem {
+            background: Theme.surface;
+            if(side-bar.current-item == Pages.dashboard): PageDashboard {
                 width: root.width - side-bar.width;
-                height: root.height + 12px;
+                height: root.height;
+                available: root.sidebar_items_available;
+                nav-target <=> NavState.page;
+            }
+
+            if(side-bar.current-item == Pages.system): page := PageSystem {
+                width: root.width - side-bar.width;
+                height: root.height;
             }
 
             /*if(side-bar.current-item == 1):*/ aura := PageAura {
                 width: root.width - side-bar.width;
-                height: root.height + 12px;
-                visible: side-bar.current-item == 1;
+                height: root.height;
+                visible: side-bar.current-item == Pages.aura;
             }
 
-            if(side-bar.current-item == 2): PageAnime {
+            if(side-bar.current-item == Pages.anime): PageAnime {
                 width: root.width - side-bar.width;
-                height: root.height + 12px;
-                visible: side-bar.current-item == 2;
+                height: root.height;
+                visible: side-bar.current-item == Pages.anime;
             }
 
-            if(side-bar.current-item == 3): PageSlash {
+            if(side-bar.current-item == Pages.slash): PageSlash {
                 width: root.width - side-bar.width;
-                height: root.height + 12px;
-                visible: side-bar.current-item == 3;
+                height: root.height;
+                visible: side-bar.current-item == Pages.slash;
             }
 
-            if(side-bar.current-item == 4): fans := PageFans {
+            if(side-bar.current-item == Pages.fans): fans := PageFans {
                 width: root.width - side-bar.width;
-                height: root.height + 12px;
-                visible: side-bar.current-item == 4;
+                height: root.height;
+                visible: side-bar.current-item == Pages.fans;
             }
 
-            if(side-bar.current-item == 5): PageGPU {
+            if(side-bar.current-item == Pages.gpu): PageGPU {
                 width: root.width - side-bar.width;
-                height: root.height + 12px;
-                visible: side-bar.current-item == 5;
+                height: root.height;
+                visible: side-bar.current-item == Pages.gpu;
             }
 
-            if(side-bar.current-item == 6): PageBattery {
+            if(side-bar.current-item == Pages.battery): PageBattery {
                 width: root.width - side-bar.width;
-                height: root.height + 12px;
-                visible: side-bar.current-item == 6;
+                height: root.height;
+                visible: side-bar.current-item == Pages.battery;
             }
 
-            if(side-bar.current-item == 7): PageAppSettings {
+            if(side-bar.current-item == Pages.settings): PageAppSettings {
                 width: root.width - side-bar.width;
-                height: root.height + 12px;
-                visible: side-bar.current-item == 7;
+                height: root.height;
+                visible: side-bar.current-item == Pages.settings;
             }
 
-            if(side-bar.current-item == 8): PageAbout {
+            if(side-bar.current-item == Pages.about): PageAbout {
                 width: root.width - side-bar.width;
-                height: root.height + 12px;
-                visible: side-bar.current-item == 8;
+                height: root.height;
+                visible: side-bar.current-item == Pages.about;
             }
 
             if toast: Rectangle {
-                x: 0px;
-                y: root.height - self.height;
-                width: root.width - side-bar.width;
+                x: Theme.space-lg;
+                y: root.height - self.height - Theme.space-lg;
+                width: root.width - side-bar.width - Theme.space-lg * 2;
                 height: 40px;
                 opacity: 1.0;
-                background: Palette.selection-background;
+                border-radius: Theme.radius-md;
+                background: Theme.surface-card;
+                border-width: 1px;
+                border-color: Theme.border;
                 clip: true;
+                drop-shadow-blur: 10px;
+                drop-shadow-color: Colors.black.with-alpha(0.4);
                 TouchArea {
                     height: 100%;
                     width: 100%;
@@ -172,14 +196,13 @@ export component MainWindow inherits Window {
                     }
                 }
 
-                Rectangle {
-                    height: 100%;
-                    width: 100%;
-                    background: Palette.control-background;
-                    Text {
-                        color: Palette.control-foreground;
-                        text: root.toast_text;
-                    }
+                Text {
+                    color: Theme.text-control;
+                    text: root.toast_text;
+                    font-size: Theme.font-md;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    overflow: elide;
                 }
             }
         }
@@ -190,13 +213,12 @@ export component MainWindow inherits Window {
         y: 0px;
         width: root.width;
         height: root.height;
-        background: Colors.rgba(25,33,23,20);
-        opacity: 0.7;
+        background: Colors.black;
+        opacity: 0.6;
         TouchArea {
             height: 100%;
             width: 100%;
             clicked => {
-                // toolbar-dropdown.close();
                 if (show_notif) {
                     show_notif = false;
                 }
@@ -225,9 +247,15 @@ export component MainWindow inherits Window {
         Rectangle {
             height: 100%;
             width: 100%;
-            background: Palette.background;
+            background: Theme.surface;
+            border-radius: Theme.radius-lg;
+            border-width: 1px;
+            border-color: Theme.border;
             Text {
+                color: Theme.text;
                 text: "Click here to exit";
+                horizontal-alignment: center;
+                vertical-alignment: center;
             }
         }
     }
@@ -237,25 +265,34 @@ export component MainWindow inherits Window {
         y: 0px;
         width: root.width;
         height: root.height;
-        background: Palette.background;
-        border-color: Palette.border;
-        border-width: 3px;
-        border-radius: 10px;
+        background: Theme.surface;
 
         VerticalBox {
-            RogItem {
-                min-height: 50px;
-                max-height: 100px;
-                Text {
-                    text <=> SomeError.error_message;
-                    font-size: 18px;
-                }
+            spacing: Theme.space-md;
+            padding: Theme.space-xl;
+
+            Text {
+                text: "⚠";
+                font-size: 32px;
+                horizontal-alignment: TextHorizontalAlignment.center;
+            }
+
+            Text {
+                text <=> SomeError.error_message;
+                font-size: Theme.font-lg;
+                font-weight: 700;
+                color: Theme.text;
+                horizontal-alignment: TextHorizontalAlignment.center;
+                wrap: word-wrap;
             }
 
             Text {
                 text <=> SomeError.error_help;
+                font-size: Theme.font-base;
+                color: Theme.text-muted;
                 horizontal-alignment: TextHorizontalAlignment.center;
                 vertical-alignment: TextVerticalAlignment.center;
+                wrap: word-wrap;
             }
         }
     }

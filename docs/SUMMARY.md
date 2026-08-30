@@ -31,3 +31,7 @@
 - [Graphics](faq/graphics.md)
 - [GPU Switching](faq/gpu-switching.md)
 - [Keyboard](faq/keyboard.md)
+
+# Development
+
+- [Daemon design patterns](dev/design-patterns.md)

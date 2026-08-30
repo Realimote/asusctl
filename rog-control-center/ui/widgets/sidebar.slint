@@ -1,21 +1,26 @@
-// Copyright © SixtyFPS GmbH <info@slint.dev>
+// Copyright © SixtyFPS GmbH <info@sixtyfps.io>
 // SPDX-License-Identifier: MIT
 
 import { Palette, VerticalBox } from "std-widgets.slint";
+import { Theme } from "theme.slint";
 
-component SideBarItem inherits Rectangle {
+// One entry of the slim navigation rail: an icon over a tiny label.
+component RailItem inherits Rectangle {
     in property <bool> selected;
     in property <bool> has-focus;
+    in property <string> icon;
     in-out property <string> text <=> label.text;
     callback clicked <=> touch.clicked;
-    min-height: self.visible ? l.preferred-height : 0px;
-    // min-width: self.visible ? l.preferred-width + 10px : 0px;
+    min-height: self.visible ? 52px : 0px;
+    border-radius: Theme.radius-md;
+    accessible-role: tab;
+
     states [
         pressed when touch.pressed: {
-            state.opacity: 0.8;
+            state.opacity: 0.75;
         }
         hover when touch.has-hover: {
-            state.opacity: 0.6;
+            state.opacity: 0.85;
         }
         selected when root.selected: {
             state.opacity: 1;
@@ -26,47 +31,61 @@ component SideBarItem inherits Rectangle {
     ]
 
     state := Rectangle {
-        opacity: 0;
-        background: Palette.selection-background;
-        animate opacity { duration: 150ms; }
+        opacity: root.selected ? 1 : 0;
+        background: Theme.selection;
+        border-radius: parent.border-radius;
+        animate opacity { duration: 120ms; }
         height: 100%;
     }
 
-    l := HorizontalLayout {
-        x: 4px;
+    l := VerticalLayout {
+        x: Theme.space-xs;
         y: (parent.height - self.height) / 2;
-        padding-left: 8px;
-        padding-right: 8px;
-        padding-top: 6px;
-        padding-bottom: 6px;
-        spacing: 0px;
+        padding-left: Theme.space-xs;
+        padding-right: Theme.space-xs;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        spacing: 2px;
+        alignment: center;
+
+        Text {
+            text: root.icon;
+            font-size: 17px;
+            horizontal-alignment: center;
+        }
+
         label := Text {
-            color: Palette.foreground;
+            color: Theme.text;
             vertical-alignment: center;
-            font-size: 14px;
+            horizontal-alignment: center;
+            font-size: Theme.font-xs;
+            overflow: elide;
         }
     }
 
     touch := TouchArea {
         width: 100%;
         height: 100%;
+        mouse-cursor: pointer;
     }
 }
 
+// Slim icon navigation rail.
 export component SideBar inherits Rectangle {
     in property <[string]> model: [];
+    in property <[string]> icons: [];
     in property <[bool]> available: [];
-    in property <bool> is_tuf: false;
-    out property <int> current-item: 0;
+    in-out property <int> current-item: 0;
     out property <int> current-focused: fs.has-focus ? fs.focused-tab : -1;
+    callback exit-app;
 
-    // The currently focused tab
-    width: 180px;
+    width: 66px;
     forward-focus: fs;
-    accessible-role: tab;
-    accessible-delegate-focus: root.current-focused >= 0 ? root.current-focused : root.current-item;
+    accessible-role: tab-list;
+
     Rectangle {
-        background: Palette.alternate-background;
+        background: Theme.surface;
+
         fs := FocusScope {
             key-pressed(event) => {
                 if (event.text == "\n") {
@@ -74,7 +93,7 @@ export component SideBar inherits Rectangle {
                     return accept;
                 }
                 if (event.text == Key.UpArrow) {
-                    self.focused-tab = Math.max(self.focused-tab - 1,  0);
+                    self.focused-tab = Math.max(self.focused-tab - 1, 0);
                     return accept;
                 }
                 if (event.text == Key.DownArrow) {
@@ -93,20 +112,17 @@ export component SideBar inherits Rectangle {
             property <int> focused-tab: 0;
             x: 0;
             width: 0;
-            // Do not react on clicks
         }
     }
 
-    VerticalBox {
-        spacing: 4px;
-        padding: 0px;
+    VerticalLayout {
+        spacing: Theme.space-xs;
+        padding: 6px;
+        padding-top: Theme.space-sm;
         alignment: start;
 
         Image {
-            height: 100px;
-            // TODO: change if TUF on the logo in the menu on the main page
-            // If running on a TUF model, replace the ROG red with TUF orange
-            // (add data/tuf-control-center.png and switch here when available)
+            height: 40px;
             source: @image-url("../../data/rog-control-center.png");
             horizontal-alignment: center;
             image-fit: contain;
@@ -114,30 +130,39 @@ export component SideBar inherits Rectangle {
 
         Rectangle {
             height: 1px;
-            background: Palette.border;
+            background: Theme.border;
         }
 
         navigation := VerticalLayout {
-            spacing: 2px;
+            spacing: 3px;
             alignment: start;
             vertical-stretch: 0;
-            for item[index] in root.model: SideBarItem {
+            for item[index] in root.model: RailItem {
                 visible: root.available[index];
                 clicked => {
                     root.current-item = index;
                 }
                 has-focus: index == root.current-focused;
+                icon: root.icons[index];
                 text: item;
                 selected: index == root.current-item;
             }
         }
 
-        VerticalLayout {
-            bottom := VerticalBox {
-                padding-left: 0px;
-                padding-top: 0px;
-                padding-bottom: 0px;
-                @children
+        Rectangle {
+            vertical-stretch: 1;
+        }
+
+        Rectangle {
+            height: 1px;
+            background: Theme.border;
+        }
+
+        exit_btn := RailItem {
+            icon: "⏻";
+            text: @tr("Quit App");
+            clicked => {
+                root.exit-app();
             }
         }
     }

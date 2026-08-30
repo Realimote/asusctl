@@ -1,7 +1,7 @@
-import { Palette, TabWidget, Button, CheckBox, ScrollView } from "std-widgets.slint";
-import { Graph, Node } from "../widgets/graph.slint";
+import { ScrollView } from "std-widgets.slint";
 import { SystemToggle, SystemDropdown } from "../widgets/common.slint";
-import { Profile, FanType, FanPageData } from "../types/fan_types.slint";
+import { PageHeader } from "../widgets/modern.slint";
+import { Theme } from "../widgets/theme.slint";
 
 export global GPUPageData {
     in-out property <int> gpu_mode_index: 0; // index into gpu_modes
@@ -32,107 +32,74 @@ export component PageGPU inherits Rectangle {
 
     ScrollView {
         VerticalLayout {
-            padding: 12px;
-            spacing: 8px;
+            padding: Theme.space-lg;
+            spacing: Theme.space-sm;
+            alignment: LayoutAlignment.start;
 
-            Rectangle {
-                background: Palette.alternate-background;
-                border-color: Palette.border;
-                border-width: 1px;
-                border-radius: 2px;
-                height: 36px;
-                Text {
-                    font-size: 16px;
-                    color: Palette.control-foreground;
-                    horizontal-alignment: TextHorizontalAlignment.center;
-                    text: @tr("Internal/Discrete GPU");
-                }
+            PageHeader {
+                icon: "🎮";
+                title: @tr("Internal/Discrete GPU");
             }
 
             if !GPUPageData.gpu_switchable: HorizontalLayout {
-                padding-right: 10px;
-                padding-left: 10px;
                 Text {
-                    font-size: 16px;
+                    font-size: Theme.font-base;
+                    color: Theme.text-muted;
                     text: @tr("This device has no switchable GPU.");
                 }
             }
 
-            if GPUPageData.gpu_switchable: HorizontalLayout {
-                padding-right: 10px;
-                padding-left: 10px;
-                alignment: LayoutAlignment.space-between;
-                Rectangle {
-                    height: 32px;
-                    Text {
-                        font-size: 16px;
-                        text: @tr("Note: Changes take effect after a reboot. The dropdown always shows the current mode.");
-                    }
+            if GPUPageData.gpu_switchable: SystemDropdown {
+                text: @tr("GPU mode");
+                model: GPUPageData.gpu_modes.length == 3 ? root.modes_all : (
+                    GPUPageData.gpu_modes.length == 2 && GPUPageData.gpu_modes[0] == "Integrated" ? root.modes_dgpu : root.modes_mux
+                );
+                current_index <=> GPUPageData.gpu_mode_index;
+                current_value: self.model[self.current_index];
+                enabled <=> GPUPageData.gpu_dropdown_enabled;
+                selected => {
+                    GPUPageData.cb_set_gpu_mode(GPUPageData.gpu_mode_index)
                 }
             }
 
-            if GPUPageData.gpu_switchable: HorizontalLayout {
-                SystemDropdown {
-                    text: @tr("GPU mode");
-                    model: GPUPageData.gpu_modes.length == 3 ? root.modes_all : (
-                        GPUPageData.gpu_modes.length == 2 && GPUPageData.gpu_modes[0] == "Integrated" ? root.modes_dgpu : root.modes_mux
-                    );
-                    current_index <=> GPUPageData.gpu_mode_index;
-                    current_value: self.model[self.current_index];
-                    enabled <=> GPUPageData.gpu_dropdown_enabled;
-                    selected => {
-                        GPUPageData.cb_set_gpu_mode(GPUPageData.gpu_mode_index)
-                    }
+            if GPUPageData.gpu_switchable: Text {
+                font-size: Theme.font-sm;
+                color: Theme.text-muted;
+                text: @tr("Note: Changes take effect after a reboot. The dropdown always shows the current mode.");
+                wrap: word-wrap;
+            }
+
+            if GPUPageData.apu_mem_present: SystemDropdown {
+                text: @tr("Reserved GPU memory");
+                model <=> GPUPageData.apu_mem_choices;
+                current_index <=> GPUPageData.apu_mem_index;
+                current_value: GPUPageData.apu_mem_choices[GPUPageData.apu_mem_index];
+                selected => {
+                    GPUPageData.cb_set_apu_mem(GPUPageData.apu_mem_index)
                 }
             }
 
-            if GPUPageData.apu_mem_present: HorizontalLayout {
-                padding-right: 10px;
-                padding-left: 10px;
-                alignment: LayoutAlignment.space-between;
-                Rectangle {
-                    height: 32px;
-                    Text {
-                        font-size: 16px;
-                        text: @tr("Note: Reserved GPU memory changes take effect after a reboot.");
-                    }
-                }
+            if GPUPageData.apu_mem_present: Text {
+                font-size: Theme.font-sm;
+                color: Theme.text-muted;
+                text: @tr("Note: Reserved GPU memory changes take effect after a reboot.");
+                wrap: word-wrap;
             }
 
-            if GPUPageData.apu_mem_present: HorizontalLayout {
-                SystemDropdown {
-                    text: @tr("Reserved GPU memory");
-                    model <=> GPUPageData.apu_mem_choices;
-                    current_index <=> GPUPageData.apu_mem_index;
-                    current_value: GPUPageData.apu_mem_choices[GPUPageData.apu_mem_index];
-                    selected => {
-                        GPUPageData.cb_set_apu_mem(GPUPageData.apu_mem_index)
-                    }
-                }
-            }
-
-            if GPUPageData.has_xgm_led: HorizontalLayout {
-                padding-right: 10px;
-                padding-left: 10px;
-                SystemToggle {
-                    text: @tr("XG Mobile LED");
-                    checked <=> GPUPageData.xgm_led_enabled;
-                    toggled(checked) => {
-                        GPUPageData.cb_set_xgm_led_enabled(checked);
-                    }
+            if GPUPageData.has_xgm_led: SystemToggle {
+                text: @tr("XG Mobile LED");
+                checked <=> GPUPageData.xgm_led_enabled;
+                toggled(checked) => {
+                    GPUPageData.cb_set_xgm_led_enabled(checked);
                 }
             }
 
             // Disable nvidia-powerd on battery toggle
-            HorizontalLayout {
-                padding-right: 10px;
-                padding-left: 10px;
-                SystemToggle {
-                    text: @tr("Disable nvidia-powerd on battery");
-                    checked <=> GPUPageData.disable_nvidia_powerd_on_battery;
-                    toggled(checked) => {
-                        GPUPageData.cb_disable_nvidia_powerd_on_battery(checked);
-                    }
+            SystemToggle {
+                text: @tr("Disable nvidia-powerd on battery");
+                checked <=> GPUPageData.disable_nvidia_powerd_on_battery;
+                toggled(checked) => {
+                    GPUPageData.cb_disable_nvidia_powerd_on_battery(checked);
                 }
             }
         }

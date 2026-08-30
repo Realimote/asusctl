@@ -27,6 +27,9 @@ pub struct CliStart {
     /// set board name for testing, this will make ROGCC show only the keyboard page
     #[argh(option)]
     pub board_name: Option<String>,
+    /// run with fake data and no dbus/daemons, for UI development and screenshots
+    #[argh(switch)]
+    pub demo: bool,
     /// put ROGCC in layout viewing mode - this is helpful for finding existing layouts that might match your laptop
     #[argh(switch)]
     pub layout_viewing: bool,

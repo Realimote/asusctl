@@ -8,6 +8,7 @@ pub use slint;
 
 pub mod cli_options;
 pub mod config;
+pub mod demo;
 pub mod error;
 pub mod notify;
 pub mod shortcuts;
@@ -31,13 +32,4 @@ pub fn print_versions() {
     println!("     rog-dbus v{}", rog_dbus::VERSION);
     println!(" rog-profiles v{}", rog_profiles::VERSION);
     println!("rog-platform v{}", rog_platform::VERSION);
-}
-
-#[derive(PartialEq, Eq, Clone, Copy)]
-pub enum Page {
-    AppSettings,
-    System,
-    AuraEffects,
-    AnimeMatrix,
-    FanCurves,
 }

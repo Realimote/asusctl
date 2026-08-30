@@ -1,0 +1,239 @@
+// Shared building blocks for the card based UI: mode buttons, section
+// headers, cards, page headers and info banners. All colours and metrics
+// come from the Theme global so pages stay visually coherent.
+import { Palette } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+
+// A large, rounded mode-selection button: icon above label, 2px accent
+// border (with a subtle glow) when selected.
+export component ModeButton inherits Rectangle {
+    in property <string> icon: "";
+    in property <string> label: "";
+    in property <bool> selected: false;
+    in property <color> accent: Theme.accent;
+    in property <bool> interactive: true;
+    callback clicked;
+
+    min-height: 70px;
+    border-radius: Theme.radius-md;
+    border-width: root.selected ? 2px : 1px;
+    border-color: root.selected ? root.accent : Theme.border;
+    background: root.selected
+        ? Theme.surface-card.mix(root.accent, 14%)
+        : Theme.surface-card;
+    drop-shadow-blur: root.selected ? 14px : 0px;
+    drop-shadow-color: root.accent.with-alpha(0.35);
+    drop-shadow-offset-y: 0px;
+    opacity: root.interactive ? 1.0 : 0.45;
+
+    animate background { duration: 120ms; }
+
+    ta := TouchArea {
+        enabled: root.interactive;
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    VerticalLayout {
+        padding: Theme.space-xs;
+        padding-top: Theme.space-sm;
+        padding-bottom: Theme.space-sm;
+        alignment: center;
+        spacing: Theme.space-xs;
+
+        Text {
+            text: root.icon;
+            font-size: Theme.font-xl;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            text: root.label;
+            font-size: Theme.font-md;
+            font-weight: 600;
+            color: root.selected ? root.accent.mix(Theme.text, 35%) : Theme.text-control;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+    }
+
+    hover := Rectangle {
+        border-radius: parent.border-radius;
+        background: white;
+        opacity: root.interactive ? (ta.has-hover ? (ta.pressed ? 0.14 : 0.06) : 0.0) : 0.0;
+        animate opacity { duration: 90ms; }
+    }
+}
+
+// Section title row: emoji icon, bold title, then right-aligned status text.
+export component SectionHeader inherits HorizontalLayout {
+    in property <string> icon: "";
+    in property <string> title: "";
+    in property <string> status: "";
+    in property <color> accent: Theme.accent;
+
+    spacing: Theme.space-sm;
+    Text {
+        text: root.icon;
+        font-size: 17px;
+        vertical-alignment: center;
+    }
+    Text {
+        text: root.title;
+        font-size: Theme.font-lg;
+        font-weight: 700;
+        color: Theme.text;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+    Rectangle {}
+    if root.status != "": Text {
+        text: root.status;
+        font-size: Theme.font-md;
+        color: Theme.text-muted;
+        vertical-alignment: center;
+        horizontal-alignment: right;
+        overflow: elide;
+    }
+}
+
+// Page title row, identical to SectionHeader but without the trailing
+// status slot. Used at the top of the non-dashboard pages.
+export component PageHeader inherits HorizontalLayout {
+    in property <string> icon: "";
+    in property <string> title: "";
+
+    spacing: Theme.space-sm;
+    Text {
+        text: root.icon;
+        font-size: 17px;
+        vertical-alignment: center;
+    }
+    Text {
+        text: root.title;
+        font-size: Theme.font-lg;
+        font-weight: 700;
+        color: Theme.text;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+    Rectangle {}
+}
+
+// Rounded card that groups one section of a page.
+export component SectionCard inherits Rectangle {
+    in property <length> pad: Theme.space-md;
+
+    border-radius: Theme.radius-lg;
+    background: Theme.surface-card;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: root.pad;
+        spacing: Theme.space-sm;
+        alignment: start;
+
+        @children
+    }
+}
+
+// Rounded banner for tips and warnings: a coloured left accent, translucent
+// tinted background and readable text of the same hue.
+export component InfoBanner inherits Rectangle {
+    in property <string> text: "";
+    in property <bool> danger: false;
+    in property <bool> warning: false;
+
+    private property <color> tone: root.danger ? Theme.status-danger
+        : root.warning ? Theme.status-warn : Theme.accent-gpu;
+
+    min-height: 36px;
+    border-radius: Theme.radius-sm;
+    background: root.tone.with-alpha(0.14);
+    border-width: 1px;
+    border-color: root.tone.with-alpha(0.45);
+
+    HorizontalLayout {
+        padding-left: Theme.space-md;
+        padding-right: Theme.space-md;
+        padding-top: Theme.space-sm;
+        padding-bottom: Theme.space-sm;
+        spacing: Theme.space-sm;
+        Text {
+            text: root.danger ? "⚠" : (root.warning ? "⚠" : "ℹ");
+            font-size: Theme.font-base;
+            vertical-alignment: center;
+        }
+        Text {
+            text: root.text;
+            font-size: Theme.font-base;
+            color: root.tone.mix(Theme.text, 40%);
+            vertical-alignment: center;
+            wrap: word-wrap;
+            horizontal-stretch: 1;
+        }
+    }
+}
+
+// Small text-only button used for "More" links.
+export component LinkButton inherits Rectangle {
+    in property <string> label: "";
+    callback clicked;
+
+    min-width: 48px;
+    min-height: 26px;
+    border-radius: Theme.radius-sm;
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    Text {
+        text: root.label;
+        font-size: Theme.font-md;
+        font-weight: 600;
+        color: Theme.accent;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    states [
+        hover when ta.has-hover: {
+            background: Theme.text.with-alpha(0.08);
+        }
+    ]
+}
+
+// Tiny rounded colour swatch showing the current Aura colour.
+export component ColourSwatch inherits Rectangle {
+    in property <brush> colour: Colors.orange;
+    callback clicked;
+
+    min-width: 30px;
+    max-width: 30px;
+    min-height: 30px;
+    max-height: 30px;
+    border-radius: 7px;
+    background: root.colour;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    states [
+        hover when ta.has-hover: {
+            border-color: Theme.accent;
+        }
+    ]
+}
