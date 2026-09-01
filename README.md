@@ -42,25 +42,6 @@
 The whole interface is built from a shared design system: all colours, spacing, corner radii and font sizes come from the `Theme` global in
 [`rog-control-center/ui/widgets/theme.slint`](rog-control-center/ui/widgets/theme.slint), and pages are composed from common widgets (cards, section headers, info banners, slider/toggle/dropdown rows) in `rog-control-center/ui/widgets/`. If you want to adjust the look of the app, start there — no page-local colour hex values are used.
 
-## Hardware and kernel compatibility
-
-### Supported laptops
-
-`asusctl` supports most ASUS gaming laptops equipped with a USB keyboard. To verify device compatibility, run `lsusb` and check for entries matching:
-
-```plain
-Bus 001 Device 002: ID 0b05:1866 ASUSTek Computer, Inc. N-KEY Device
-```
-
-or
-
-```plain
-Bus 003 Device 002: ID 0b05:19b6 ASUSTek Computer, Inc. [unknown]
-```
-
-Devices with these hardware IDs typically work without extra configuration. Features such as AniMe Matrix, LED controls and Slash displays work regardless of laptop make, but newer models may require explicit support — see [Laptop support requests](#laptop-support-requests).
-
-Battery charge thresholds use generic kernel interfaces and work on non-ASUS hardware; platform and fan controls require the ASUS `asus-nb-wmi` or `asus-armoury` drivers.
 
 ### Display server support
 
@@ -76,19 +57,6 @@ Feature availability depends on upstream kernel support and hardware capabilitie
 - **System:** battery charge limits and health reporting, POST audio toggle, dGPU power notifications, global shortcuts through the desktop portal
 
 Keyboard backlight support relies on the hardware mappings in [`rog-aura/data/aura_support.ron`](rog-aura/data/aura_support.ron) (installed to `/usr/share/asusd/aura_support.ron`). See the [rog-aura README](rog-aura/README.md) for details.
-
-## Installation
-
-Pre-built packages are available in several distribution repositories — check your package manager before building from source.
-
-| Distribution | Source | Install |
-| :--- | :--- | :--- |
-| **Ultramarine / Nobara** | Official repositories | `sudo dnf install asusctl` |
-| **Fedora** | [Terra](https://terrapkg.com/) | `sudo dnf install asusctl` |
-| **openSUSE** | [OBS](https://download.opensuse.org/repositories/home:/luke_nukem:/asus/) | Add the OBS repository |
-| **Arch Linux** | [OGC Arch repository](https://github.com/OpenGamingCollective/ogc-arch-packaging) | See the OGC Arch guide |
-| **Nix / NixOS** | Nixpkgs | `nix-env -iA nixpkgs.asusctl` |
-| **Solus** | Official repositories | `sudo eopkg install asusctl` |
 
 ### Service management
 
@@ -113,47 +81,6 @@ A Rust toolchain from [rustup.rs](https://rustup.rs/) (stable) is required, plus
 sudo pacman -S git cmake clang pkg-config libzip rust openssl
 make
 sudo make install
-```
-
-#### Fedora
-
-```sh
-sudo dnf install git make cmake clang-devel libxkbcommon-devel systemd-devel expat-devel pcre2-devel libzstd-devel gtk3-devel rust cargo
-make
-sudo make install
-```
-
-#### openSUSE
-
-```sh
-sudo zypper in -t pattern devel_basis
-sudo zypper in rustup make cmake clang-devel libxkbcommon-devel systemd-devel expat-devel pcre2-devel libzstd-devel
-make
-sudo make install
-```
-
-#### Debian / Ubuntu / Pop!_OS (unsupported)
-
-```sh
-sudo apt install make cargo gcc pkg-config openssl libasound2-dev cmake build-essential python3 \
-  libfreetype6-dev libexpat1-dev libxcb-composite0-dev libssl-dev libx11-dev libfontconfig1-dev \
-  curl libclang-dev libudev-dev libinput-dev libxkbcommon-dev libgbm-dev
-make
-sudo make install
-```
-
-### Upgrading
-
-```sh
-sudo systemctl daemon-reload && sudo systemctl restart asusd
-```
-
-### Uninstalling
-
-```sh
-sudo systemctl disable --now asusd.service asus-shutdown.service
-sudo make uninstall
-sudo systemctl daemon-reload
 ```
 
 Then remove any leftover configuration in `/etc/asusd/`. For package installations, use your distribution's package manager instead.
@@ -196,12 +123,6 @@ cargo clippy
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening pull requests.
 
-## Laptop support requests
-
-To request support for unlisted hardware, open an issue on the [issue tracker](https://github.com/OpenGamingCollective/asusctl/issues).
-
-- **PPT sliders:** see [issue #124](https://github.com/OpenGamingCollective/asusctl/issues/124).
-- **Keyboard backlight:** test layout changes locally in `/usr/share/asusd/aura_support.ron` (or `rog-aura/data/aura_support.ron` in this repository); once they work for your model, open a pull request with the updated mapping.
 
 ## License
 
