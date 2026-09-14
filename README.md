@@ -78,7 +78,7 @@ A Rust toolchain from [rustup.rs](https://rustup.rs/) (stable) is required, plus
 #### Arch Linux
 
 ```sh
-sudo pacman -S git cmake clang pkg-config libzip rust openssl
+sudo pacman -S --needed --asdeps git cmake clang pkg-config libzip rust openssl
 make
 sudo make install
 ```
