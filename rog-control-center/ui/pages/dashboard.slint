@@ -1,20 +1,25 @@
-// G-Helper style single-page dashboard. Every control binds to the same
-// data globals the advanced pages use, so no extra dbus wiring is needed.
-import { ComboBox, Slider, Switch, ScrollView } from "std-widgets.slint";
-import { ModeButton, SectionHeader, SectionCard, LinkButton, ColourSwatch } from "../widgets/modern.slint";
+// OpenRevo-style overview page: a metric tile row followed by card sections.
+//
+// Every control binds to the same data globals the advanced pages use, so no
+// extra dbus wiring is needed. All widgets are hand-drawn from `cyber.slint`
+// because the std-widgets cannot be re-themed.
+import { ScrollView } from "std-widgets.slint";
+import { SectionCard, LinkButton, ColourSwatch } from "../widgets/modern.slint";
+import { SectionTitle, SectionHint, MetricTile, OptionCard, Segmented, Select, CyberSlider, ToggleRow } from "../widgets/cyber.slint";
 import { Theme } from "../widgets/theme.slint";
 import { SystemPageData } from "system.slint";
 import { GPUPageData } from "gpu.slint";
 import { AuraPageData } from "../types/aura_types.slint";
 import { SlashPageData } from "slash.slint";
 
-// Mirror of the sidebar selection so the dashboard links and external
+// Mirror of the navigation selection so the dashboard links and external
 // code (demo mode, tests) can switch pages.
 export global NavState {
     in-out property <int> page: 0;
 }
 
-// Sidebar model order for convenience below.
+// Page indices. These are part of the interface with Rust (demo mode sets
+// `NavState.page`), so the order must stay stable.
 export global Pages {
     out property <int> dashboard: 0;
     out property <int> system: 1;
@@ -31,7 +36,7 @@ export global Pages {
 export component PageDashboard inherits Rectangle {
     in property <[bool]> available;
     // Set by section links (Fan + Power, More, ...); the main window two-way
-    // binds this to the sidebar selection. Indices match the sidebar model.
+    // binds this to the navigation selection.
     in-out property <int> nav-target: 0;
     clip: true;
 
@@ -52,13 +57,41 @@ export component PageDashboard inherits Rectangle {
             ? SystemPageData.platform_profile_indexes[SystemPageData.platform_profile]
             : -1;
 
-    function profile_icon(value: int) -> string {
-        if (value == 0) { return "⚖"; }
-        if (value == 1) { return "🚀"; }
-        if (value == 2) { return "🌙"; }
-        if (value == 3) { return "🌱"; }
-        return "🛠";
-    }
+    property <string> load_fmt: @tr("load_pct" => "Load");
+
+    // Cards live in nested layouts whose cross axis is content-measured, so a
+    // plain `horizontal-stretch` cannot fill the row. Derive the widths from
+    // the page width instead: window - page padding - section padding - slack
+    // for the scroll bar.
+    // Two distinct widths, because two different containers are involved:
+    //   * a row placed directly on the page gets the page content box;
+    //   * a row inside a section card gets that box minus the card padding.
+    // Mixing them up makes adjacent rows end at different x positions.
+    property <length> content-width: root.width - Theme.space-lg * 2;
+    property <length> card-inner-width: root.content-width - Theme.space-md * 2;
+    // The performance and GPU sections share one row, half each, whenever both
+    // are present; on its own a section keeps the full width.
+    property <bool> perf-gpu-side-by-side: root.show_perf && root.show_gpu;
+    property <length> half-row-width: (root.content-width - Theme.space-md) / 2;
+    property <length> perf-section-width: root.perf-gpu-side-by-side ? root.half-row-width : root.content-width;
+    property <length> gpu-section-width: root.perf-gpu-side-by-side ? root.half-row-width : root.content-width;
+    // Same treatment for the display and Slash sections.
+    property <bool> display-slash-side-by-side: root.show_display && root.show_slash;
+    property <length> display-section-width: root.display-slash-side-by-side ? root.half-row-width : root.content-width;
+    property <length> slash-section-width: root.display-slash-side-by-side ? root.half-row-width : root.content-width;
+    property <length> display-inner-width: root.display-section-width - Theme.space-md * 2;
+    property <length> slash-inner-width: root.slash-section-width - Theme.space-md * 2;
+    // Content width inside a section card = section width - its padding.
+    property <length> perf-cards-width: root.perf-section-width - Theme.space-md * 2;
+    property <length> gpu-cards-width: root.gpu-section-width - Theme.space-md * 2;
+    property <int> profile-cards: SystemPageData.platform_profile_indexes.length + (available[Pages.fans] ? 1 : 0);
+    property <length> profile-card-width: root.profile-cards > 0
+        ? (root.perf-cards-width - Theme.space-sm * (root.profile-cards - 1)) / root.profile-cards
+        : root.perf-cards-width;
+    property <int> gpu-cards: GPUPageData.gpu_modes.length;
+    property <length> gpu-card-width: root.gpu-cards > 0
+        ? (root.gpu-cards-width - Theme.space-sm * (root.gpu-cards - 1)) / root.gpu-cards
+        : root.gpu-cards-width;
 
     function profile_label(value: int) -> string {
         // Plain msgids so the shared profile translations are reused
@@ -112,6 +145,51 @@ export component PageDashboard inherits Rectangle {
                 : "");
     }
 
+    function cpu_tile_value() -> string {
+        return SystemPageData.cpu_temp_val >= 0.0
+            ? Math.round(SystemPageData.cpu_temp_val)
+            : "--";
+    }
+
+    function cpu_tile_note() -> string {
+        if (SystemPageData.cpu_usage_val >= 0.0) {
+            return root.load_fmt + " " + Math.round(SystemPageData.cpu_usage_val) + "%";
+        }
+        if (SystemPageData.cpu_freq_mhz > 0.0) {
+            return Math.round(SystemPageData.cpu_freq_mhz) + " MHz";
+        }
+        return "";
+    }
+
+    function gpu_tile_value() -> string {
+        return SystemPageData.gpu_temp_val >= 0.0
+            ? Math.round(SystemPageData.gpu_temp_val)
+            : "--";
+    }
+
+    function gpu_tile_note() -> string {
+        if (SystemPageData.dgpu_suspended) {
+            return @tr("gpu_suspended" => "dGPU suspended");
+        }
+        if (SystemPageData.gpu_usage_val >= 0.0) {
+            return root.load_fmt + " " + Math.round(SystemPageData.gpu_usage_val) + "%";
+        }
+        return "";
+    }
+
+    function battery_tile_value() -> string {
+        return SystemPageData.battery_health >= 0
+            ? Math.round(SystemPageData.battery_health)
+            : "--";
+    }
+
+    function battery_tile_note() -> string {
+        if (SystemPageData.battery_power_consumption > 0.0) {
+            return Math.round(SystemPageData.battery_power_consumption) + " W";
+        }
+        return SystemPageData.battery_status;
+    }
+
     function aura_mode_value() -> int {
         if (AuraPageData.current_available_mode >= 0
             && AuraPageData.current_available_mode < AuraPageData.supported_basic_modes.length) {
@@ -147,22 +225,86 @@ export component PageDashboard inherits Rectangle {
                 }
             }
 
-            // ─────────────── Performance modes ───────────────
+            // ─────────────── Live telemetry tiles ───────────────
+            if root.show_anything: HorizontalLayout {
+                width: root.content-width;
+                spacing: Theme.space-md;
+
+                MetricTile {
+                    horizontal-stretch: 1;
+                    title: SystemPageData.cpu_name != "" ? SystemPageData.cpu_name : @tr("tile_cpu" => "Processor");
+                    icon: @image-url("../icons/cpu.svg");
+                    accent: Theme.accent-overview;
+                    value: root.cpu_tile_value();
+                    unit: "°C";
+                    footnote: root.cpu_tile_note();
+                }
+
+                if SystemPageData.has_dgpu: MetricTile {
+                    horizontal-stretch: 1;
+                    title: SystemPageData.dgpu_name != "" ? SystemPageData.dgpu_name : @tr("tile_gpu" => "Graphics");
+                    icon: @image-url("../icons/monitor.svg");
+                    accent: Theme.accent-lighting;
+                    value: root.gpu_tile_value();
+                    unit: "°C";
+                    footnote: root.gpu_tile_note();
+                    value-tint: SystemPageData.dgpu_suspended ? Theme.text-dim : Theme.text;
+                }
+
+                MetricTile {
+                    horizontal-stretch: 1;
+                    title: @tr("tile_cooling" => "Cooling");
+                    icon: @image-url("../icons/fan.svg");
+                    accent: Theme.accent-thermal;
+                    value: SystemPageData.cpu_fan_rpm >= 0 ? SystemPageData.cpu_fan_rpm : "--";
+                    unit: "RPM";
+                    footnote: SystemPageData.gpu_fan_rpm >= 0
+                        ? @tr("fan_gpu" => "GPU") + " " + SystemPageData.gpu_fan_rpm
+                        : "";
+                }
+
+                if root.show_battery: MetricTile {
+                    horizontal-stretch: 1;
+                    title: @tr("Menu9" => "Battery");
+                    icon: @image-url("../icons/battery-charging.svg");
+                    accent: Theme.accent-battery;
+                    value: root.battery_tile_value();
+                    unit: "%";
+                    footnote: root.battery_tile_note();
+                }
+            }
+
+            // ─────────────── Performance + GPU modes (side by side) ───────
+            HorizontalLayout {
+                width: root.content-width;
+                spacing: Theme.space-md;
+                alignment: start;
+
             if root.show_perf: SectionCard {
-                SectionHeader {
-                    icon: "🔥";
+                width: root.perf-section-width;
+                SectionTitle {
+                    icon: @image-url("../icons/zap.svg");
                     accent: Theme.accent-perf;
                     title: @tr("Performance mode") + ": " + root.profile_label(root.active_profile_value);
                     status: root.perf_status();
                 }
 
+                SectionHint {
+                    text: @tr("perf_hint" => "Platform profile and fan behaviour, applied immediately.");
+                }
+
                 HorizontalLayout {
+                    width: root.perf-cards-width;
                     spacing: Theme.space-sm;
 
-                    for v[i] in SystemPageData.platform_profile_indexes: ModeButton {
-                        horizontal-stretch: 1;
+                    for v[i] in SystemPageData.platform_profile_indexes: OptionCard {
+                        width: root.profile-card-width;
                         accent: Theme.accent-perf;
-                        icon: root.profile_icon(v);
+                        icon: v == 1 ? @image-url("../icons/rocket.svg")
+                            : (v == 2 ? @image-url("../icons/moon.svg")
+                            : (v == 3 ? @image-url("../icons/leaf.svg")
+                            : (v == 0 ? @image-url("../icons/scale.svg")
+                            : @image-url("../icons/wrench.svg"))));
                         label: root.profile_label(v);
                         selected: root.active_profile_value == v;
                         clicked => {
@@ -170,10 +312,10 @@ export component PageDashboard inherits Rectangle {
                         }
                     }
 
-                    if available[Pages.fans]: ModeButton {
-                        horizontal-stretch: 1;
-                        accent: Theme.accent-perf;
-                        icon: "🌀";
+                    if available[Pages.fans]: OptionCard {
+                        width: root.profile-card-width;
+                        accent: Theme.accent-thermal;
+                        icon: @image-url("../icons/fan.svg");
                         label: @tr("Fan + Power");
                         clicked => {
                             root.nav-target = Pages.fans;
@@ -182,23 +324,30 @@ export component PageDashboard inherits Rectangle {
                 }
             }
 
-            // ─────────────── GPU modes ───────────────
             if root.show_gpu: SectionCard {
-                SectionHeader {
-                    icon: "🎮";
+                width: root.gpu-section-width;
+                SectionTitle {
+                    icon: @image-url("../icons/monitor.svg");
                     accent: Theme.accent-gpu;
                     title: @tr("GPU mode") + ": " + root.gpu_label(GPUPageData.gpu_modes[GPUPageData.gpu_mode_index]);
                     status: root.gpu_status();
                 }
 
+                SectionHint {
+                    text: @tr("gpu_reboot_hint" => "GPU mode changes apply after a reboot.");
+                }
+
                 HorizontalLayout {
+                    width: root.gpu-cards-width;
                     spacing: Theme.space-sm;
 
-                    for m[i] in GPUPageData.gpu_modes: ModeButton {
-                        horizontal-stretch: 1;
+                    for m[i] in GPUPageData.gpu_modes: OptionCard {
+                        width: root.gpu-card-width;
                         accent: Theme.accent-gpu;
                         interactive: GPUPageData.gpu_dropdown_enabled;
-                        icon: m == "Integrated" ? "🍃" : (m == "Ultimate" ? "🎮" : "🧩");
+                        icon: m == "Integrated" ? @image-url("../icons/leaf.svg")
+                            : (m == "Ultimate" ? @image-url("../icons/gamepad-2.svg")
+                            : @image-url("../icons/monitor.svg"));
                         label: root.gpu_label(m);
                         selected: GPUPageData.gpu_mode_index == i;
                         clicked => {
@@ -207,91 +356,138 @@ export component PageDashboard inherits Rectangle {
                     }
                 }
 
-                Text {
-                    font-size: Theme.font-sm;
-                    color: Theme.text-muted;
-                    text: @tr("gpu_reboot_hint" => "GPU mode changes apply after a reboot.");
-                }
             }
+            }
+
+            // ─────────────── Display + Slash lighting (side by side) ───────
+            HorizontalLayout {
+                width: root.content-width;
+                spacing: Theme.space-md;
+                alignment: start;
 
             // ─────────────── Display ───────────────
             if root.show_display: SectionCard {
-                SectionHeader {
-                    icon: "🖥";
+                width: root.display-section-width;
+                SectionTitle {
+                    icon: @image-url("../icons/panel-top.svg");
                     accent: Theme.accent-display;
                     title: @tr("Display");
                     status: SystemPageData.panel_overdrive == 1 ? @tr("panel_od_on" => "Overdrive on") : "";
                 }
 
-                HorizontalLayout {
-                    spacing: Theme.space-sm;
-
-                    if SystemPageData.panel_overdrive != -1: ModeButton {
-                        horizontal-stretch: 1;
-                        accent: Theme.accent-display;
-                        icon: "⏩";
-                        label: @tr("panel_od" => "Panel OD");
-                        selected: SystemPageData.panel_overdrive == 1;
-                        clicked => {
-                            SystemPageData.panel_overdrive = SystemPageData.panel_overdrive == 1 ? 0 : 1;
-                            SystemPageData.cb_panel_overdrive(SystemPageData.panel_overdrive);
-                        }
+                if SystemPageData.panel_overdrive != -1: ToggleRow {
+                    width: root.display-inner-width;
+                    accent: Theme.accent-display;
+                    text: @tr("panel_od" => "Panel OD");
+                    checked: SystemPageData.panel_overdrive == 1;
+                    toggled(v) => {
+                        SystemPageData.panel_overdrive = v ? 1 : 0;
+                        SystemPageData.cb_panel_overdrive(v ? 1 : 0);
                     }
+                }
 
-                    if SystemPageData.screen_auto_brightness != -1: ModeButton {
-                        horizontal-stretch: 1;
-                        accent: Theme.accent-display;
-                        icon: "🌞";
-                        label: @tr("Auto brightness");
-                        selected: SystemPageData.screen_auto_brightness == 1;
-                        clicked => {
-                            SystemPageData.screen_auto_brightness = SystemPageData.screen_auto_brightness == 1 ? 0 : 1;
-                            SystemPageData.cb_screen_auto_brightness(SystemPageData.screen_auto_brightness);
-                        }
+                if SystemPageData.screen_auto_brightness != -1: ToggleRow {
+                    width: root.display-inner-width;
+                    accent: Theme.accent-display;
+                    text: @tr("Auto brightness");
+                    checked: SystemPageData.screen_auto_brightness == 1;
+                    toggled(v) => {
+                        SystemPageData.screen_auto_brightness = v ? 1 : 0;
+                        SystemPageData.cb_screen_auto_brightness(v ? 1 : 0);
                     }
                 }
 
                 if SystemPageData.mini_led_mode != -1: HorizontalLayout {
-                    spacing: Theme.space-sm;
+                    width: root.display-inner-width;
+                    spacing: Theme.space-md;
                     Text {
                         width: 130px;
                         text: @tr("MiniLED Mode");
                         vertical-alignment: center;
                         font-size: Theme.font-md;
+                        color: Theme.text-control;
                     }
-                    ComboBox {
+                    Segmented {
                         horizontal-stretch: 1;
-                        model <=> SystemPageData.mini_led_mode_choices;
-                        current_index <=> SystemPageData.mini_led_mode;
-                        current_value: SystemPageData.mini_led_mode >= 0
-                            && SystemPageData.mini_led_mode < SystemPageData.mini_led_mode_choices.length
-                            ? SystemPageData.mini_led_mode_choices[SystemPageData.mini_led_mode] : "";
-                        selected => {
-                            SystemPageData.cb_mini_led_mode(SystemPageData.mini_led_mode);
+                        accent: Theme.accent-display;
+                        model: SystemPageData.mini_led_mode_choices;
+                        current <=> SystemPageData.mini_led_mode;
+                        selected(i) => {
+                            SystemPageData.cb_mini_led_mode(i);
                         }
                     }
                 }
             }
 
+            // ─────────────── Slash lighting ───────────────
+            if root.show_slash: SectionCard {
+                width: root.slash-section-width;
+                SectionTitle {
+                    icon: @image-url("../icons/sparkles.svg");
+                    accent: Theme.accent-slash;
+                    title: @tr("Slash lighting");
+                    status: SlashPageData.enabled ? "" : @tr("slash_off" => "Off");
+                }
+
+                ToggleRow {
+                    width: root.slash-inner-width;
+                    accent: Theme.accent-slash;
+                    text: @tr("Enable");
+                    checked <=> SlashPageData.enabled;
+                    toggled(v) => {
+                        SlashPageData.cb_enabled(v);
+                    }
+                }
+
+                if SlashPageData.mode_choices.length > 0: HorizontalLayout {
+                    width: root.slash-inner-width;
+                    spacing: Theme.space-md;
+                    Rectangle {}
+                    Select {
+                        min-width: 200px;
+                        accent: Theme.accent-slash;
+                        enabled: SlashPageData.enabled;
+                        model: SlashPageData.mode_choices;
+                        current-index <=> SlashPageData.mode;
+                        text: SlashPageData.mode >= 0 && SlashPageData.mode < SlashPageData.mode_choices.length
+                            ? SlashPageData.mode_choices[SlashPageData.mode] : "";
+                        selected(i) => {
+                            SlashPageData.cb_mode(i);
+                        }
+                    }
+                    LinkButton {
+                        label: @tr("More");
+                        clicked => {
+                            root.nav-target = Pages.slash;
+                        }
+                    }
+                }
+            }
+            }
+
+
             // ─────────────── Battery ───────────────
             if root.show_battery: SectionCard {
-                SectionHeader {
-                    icon: "🔋";
+                SectionTitle {
+                    icon: @image-url("../icons/battery-charging.svg");
                     accent: Theme.accent-battery;
-                    title: @tr("Battery");
+                    title: @tr("Menu9" => "Battery");
                     status: root.battery_status();
                 }
 
                 HorizontalLayout {
+                    width: root.card-inner-width;
                     spacing: Theme.space-md;
                     Text {
                         text: @tr("Charge limit");
                         vertical-alignment: center;
                         font-size: Theme.font-md;
+                        color: Theme.text-control;
                     }
-                    Slider {
+                    CyberSlider {
                         horizontal-stretch: 1;
-                        enabled <=> SystemPageData.charge_control_enabled;
+                        accent: Theme.accent-battery;
+                        enabled: SystemPageData.charge_control_enabled;
                         minimum: 20;
                         maximum: 100;
                         value <=> SystemPageData.charge_control_end_threshold;
@@ -305,14 +501,14 @@ export component PageDashboard inherits Rectangle {
                         max-width: 58px;
                         min-height: 30px;
                         border-radius: Theme.radius-sm;
-                        background: Theme.surface;
+                        background: Theme.surface-raised;
                         border-width: 1px;
                         border-color: Theme.border;
                         Text {
                             text: Math.round(SystemPageData.charge_control_end_threshold) + "%";
                             font-weight: 700;
                             font-size: Theme.font-md;
-                            color: Theme.text-control;
+                            color: Theme.accent-battery;
                             horizontal-alignment: center;
                             vertical-alignment: center;
                         }
@@ -322,8 +518,8 @@ export component PageDashboard inherits Rectangle {
 
             // ─────────────── Keyboard Aura ───────────────
             if root.show_aura: SectionCard {
-                SectionHeader {
-                    icon: "🌈";
+                SectionTitle {
+                    icon: @image-url("../icons/lightbulb.svg");
                     accent: Theme.accent-keyboard;
                     title: @tr("Keyboard Aura");
                     status: AuraPageData.brightness >= 0 && AuraPageData.brightness < AuraPageData.brightness_names.length
@@ -331,41 +527,44 @@ export component PageDashboard inherits Rectangle {
                 }
 
                 HorizontalLayout {
-                    spacing: Theme.space-sm;
+                    width: root.card-inner-width;
+                    spacing: Theme.space-md;
 
                     VerticalLayout {
                         spacing: Theme.space-xs;
+                        horizontal-stretch: 3;
                         Text {
                             text: @tr("Brightness");
                             font-size: Theme.font-sm;
                             color: Theme.text-muted;
                         }
-                        ComboBox {
+                        Segmented {
+                            accent: Theme.accent-keyboard;
                             enabled: AuraPageData.brightness_names.length > 0;
-                            model <=> AuraPageData.brightness_names;
-                            current_index <=> AuraPageData.brightness;
-                            current_value: AuraPageData.brightness >= 0 && AuraPageData.brightness < AuraPageData.brightness_names.length
-                                ? AuraPageData.brightness_names[AuraPageData.brightness] : "";
-                            selected => {
-                                AuraPageData.cb_brightness(AuraPageData.brightness);
+                            model: AuraPageData.brightness_names;
+                            current <=> AuraPageData.brightness;
+                            selected(i) => {
+                                AuraPageData.cb_brightness(i);
                             }
                         }
                     }
 
                     VerticalLayout {
                         spacing: Theme.space-xs;
+                        horizontal-stretch: 4;
                         Text {
                             text: @tr("Effect");
                             font-size: Theme.font-sm;
                             color: Theme.text-muted;
                         }
-                        ComboBox {
-                            model <=> AuraPageData.available_mode_names;
-                            current_index <=> AuraPageData.current_available_mode;
-                            current_value: AuraPageData.current_available_mode >= 0
+                        Select {
+                            accent: Theme.accent-keyboard;
+                            model: AuraPageData.available_mode_names;
+                            current-index <=> AuraPageData.current_available_mode;
+                            text: AuraPageData.current_available_mode >= 0
                                 && AuraPageData.current_available_mode < AuraPageData.available_mode_names.length
                                 ? AuraPageData.available_mode_names[AuraPageData.current_available_mode] : "";
-                            selected => {
+                            selected(i) => {
                                 AuraPageData.apply_effect({
                                     mode: root.aura_mode_value(),
                                     zone: AuraPageData.led_mode_data.zone,
@@ -380,18 +579,20 @@ export component PageDashboard inherits Rectangle {
 
                     VerticalLayout {
                         spacing: Theme.space-xs;
+                        horizontal-stretch: 3;
                         Text {
                             text: @tr("Speed");
                             font-size: Theme.font-sm;
                             color: Theme.text-muted;
                         }
-                        ComboBox {
+                        Select {
+                            accent: Theme.accent-keyboard;
                             enabled: AuraPageData.speed_enabled;
-                            model <=> AuraPageData.speed_names;
-                            current_index <=> AuraPageData.speed;
-                            current_value: AuraPageData.speed >= 0 && AuraPageData.speed < AuraPageData.speed_names.length
+                            model: AuraPageData.speed_names;
+                            current-index <=> AuraPageData.speed;
+                            text: AuraPageData.speed >= 0 && AuraPageData.speed < AuraPageData.speed_names.length
                                 ? AuraPageData.speed_names[AuraPageData.speed] : "";
-                            selected => {
+                            selected(i) => {
                                 AuraPageData.apply_effect({
                                     mode: AuraPageData.led_mode_data.mode,
                                     zone: AuraPageData.led_mode_data.zone,
@@ -406,6 +607,7 @@ export component PageDashboard inherits Rectangle {
 
                     VerticalLayout {
                         spacing: Theme.space-xs;
+                        alignment: start;
                         Text {
                             text: @tr("Colour");
                             font-size: Theme.font-sm;
@@ -422,58 +624,9 @@ export component PageDashboard inherits Rectangle {
                             }
                         }
                     }
-
-                    Rectangle {}
-                    LinkButton {
-                        label: @tr("More");
-                        clicked => {
-                            root.nav-target = Pages.aura;
-                        }
-                    }
                 }
             }
 
-            // ─────────────── Slash lighting ───────────────
-            if root.show_slash: SectionCard {
-                SectionHeader {
-                    icon: "✨";
-                    accent: Theme.accent-slash;
-                    title: @tr("Slash lighting");
-                    status: SlashPageData.enabled ? "" : @tr("slash_off" => "Off");
-                }
-
-                HorizontalLayout {
-                    spacing: Theme.space-lg;
-
-                    Switch {
-                        text: @tr("Enable");
-                        checked <=> SlashPageData.enabled;
-                        toggled => {
-                            SlashPageData.cb_enabled(SlashPageData.enabled);
-                        }
-                    }
-
-                    if SlashPageData.mode_choices.length > 0: ComboBox {
-                        min-width: 150px;
-                        model <=> SlashPageData.mode_choices;
-                        current_index <=> SlashPageData.mode;
-                        current_value: SlashPageData.mode >= 0 && SlashPageData.mode < SlashPageData.mode_choices.length
-                            ? SlashPageData.mode_choices[SlashPageData.mode] : "";
-                        enabled: SlashPageData.enabled;
-                        selected => {
-                            SlashPageData.cb_mode(SlashPageData.mode);
-                        }
-                    }
-
-                    Rectangle {}
-                    LinkButton {
-                        label: @tr("More");
-                        clicked => {
-                            root.nav-target = Pages.slash;
-                        }
-                    }
-                }
-            }
         }
     }
 }

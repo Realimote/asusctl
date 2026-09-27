@@ -28,6 +28,7 @@ pub fn run() -> crate::error::Result<()> {
 
     let ui = MainWindow::new().map_err(demo_err)?;
     ui.set_device_name("ROG Zephyrus G14 GA403UV (demo)".into());
+    ui.set_version(crate::VERSION.into());
     ui.set_sidebar_items_available([
         true, true, true, true, true, true, true, true, true, true,
     ].into());

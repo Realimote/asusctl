@@ -36,42 +36,42 @@ msgstr "亮"
 #: rog-control-center/ui/pages/anime.slint:23
 msgctxt "AnimePageData"
 msgid "Glitch Construction"
-msgstr ""
+msgstr "故障构建"
 
 #: rog-control-center/ui/pages/anime.slint:23
 msgctxt "AnimePageData"
 msgid "Static Emergence"
-msgstr ""
+msgstr "静态浮现"
 
 #: rog-control-center/ui/pages/anime.slint:25
 msgctxt "AnimePageData"
 msgid "Binary Banner Scroll"
-msgstr ""
+msgstr "二进制横幅滚动"
 
 #: rog-control-center/ui/pages/anime.slint:25
 msgctxt "AnimePageData"
 msgid "Rog Logo Glitch"
-msgstr ""
+msgstr "ROG 标志故障"
 
 #: rog-control-center/ui/pages/anime.slint:27
 msgctxt "AnimePageData"
 msgid "Banner Swipe"
-msgstr ""
+msgstr "横幅滑动"
 
 #: rog-control-center/ui/pages/anime.slint:27
 msgctxt "AnimePageData"
 msgid "Starfield"
-msgstr ""
+msgstr "星空"
 
 #: rog-control-center/ui/pages/anime.slint:29
 msgctxt "AnimePageData"
 msgid "Glitch Out"
-msgstr ""
+msgstr "故障消散"
 
 #: rog-control-center/ui/pages/anime.slint:29
 msgctxt "AnimePageData"
 msgid "See Ya"
-msgstr ""
+msgstr "再见"
 
 #: rog-control-center/ui/pages/anime.slint:47
 msgctxt "Anime Brightness"
@@ -246,38 +246,34 @@ msgstr "Slash 灯带"
 #: rog-control-center/ui/pages/slash.slint:56
 msgctxt "PageSlash"
 msgid "Enable A-cover lighting"
-msgstr ""
+msgstr "启用 A 面灯效"
 
 #: rog-control-center/ui/pages/slash.slint:64
-#, fuzzy
 msgctxt "PageSlash"
 msgid "Brightness"
 msgstr "亮度"
 
 #: rog-control-center/ui/pages/slash.slint:77
-#, fuzzy
 msgctxt "PageSlash"
 msgid "Animation speed"
-msgstr "开机"
+msgstr "动画速度"
 
 #: rog-control-center/ui/pages/slash.slint:90
-#, fuzzy
 msgctxt "PageSlash"
 msgid "Animation"
-msgstr "开机"
+msgstr "动画效果"
 
 #: rog-control-center/ui/pages/slash.slint:110
 msgctxt "PageSlash"
 msgid "Visibility triggers"
-msgstr ""
+msgstr "显示触发条件"
 
 #: rog-control-center/ui/pages/slash.slint:115
 msgctxt "PageSlash"
 msgid "Show on boot"
-msgstr ""
+msgstr "开机时显示"
 
 #: rog-control-center/ui/pages/slash.slint:123
-#, fuzzy
 msgctxt "PageSlash"
 msgid "Show on shutdown"
 msgstr "关机"
@@ -285,10 +281,9 @@ msgstr "关机"
 #: rog-control-center/ui/pages/slash.slint:131
 msgctxt "PageSlash"
 msgid "Show on sleep"
-msgstr ""
+msgstr "睡眠时显示"
 
 #: rog-control-center/ui/pages/slash.slint:139
-#, fuzzy
 msgctxt "PageSlash"
 msgid "Show on battery"
 msgstr "电池供电时关闭"
@@ -296,10 +291,9 @@ msgstr "电池供电时关闭"
 #: rog-control-center/ui/pages/slash.slint:147
 msgctxt "PageSlash"
 msgid "Show low-battery warning"
-msgstr ""
+msgstr "低电量时显示警告"
 
 #: rog-control-center/ui/pages/slash.slint:155
-#, fuzzy
 msgctxt "PageSlash"
 msgid "Show when lid is closed"
 msgstr "合上盖子时关闭"
@@ -312,13 +306,11 @@ msgid ""
 msgstr "Slash 灯效控制支持的 Zephyrus 机型上的 A 面 LED 灯带。"
 
 #: rog-control-center/ui/pages/battery.slint:24
-#, fuzzy
 msgctxt "PageBattery"
 msgid "Battery Information"
 msgstr "电池信息"
 
 #: rog-control-center/ui/pages/battery.slint:29
-#, fuzzy
 msgctxt "PageBattery"
 msgid "Charge limit"
 msgstr "充电限制"
@@ -335,7 +327,6 @@ msgid "Status:"
 msgstr "状态:"
 
 #: rog-control-center/ui/pages/battery.slint:80
-#, fuzzy
 msgctxt "PageBattery"
 msgid "Power Draw:"
 msgstr "功耗:"
@@ -376,7 +367,6 @@ msgid "Start app on system startup"
 msgstr "系统开机时启动应用"
 
 #: rog-control-center/ui/pages/app_settings.slint:69
-#, fuzzy
 msgctxt "PageAppSettings"
 msgid "Start in background on startup"
 msgstr "启动至后台"
@@ -397,7 +387,6 @@ msgid "Quiet"
 msgstr "省电"
 
 #: rog-control-center/ui/pages/system.slint:21
-#, fuzzy
 msgctxt "SystemPageData"
 msgid "LowPower"
 msgstr "省电"
@@ -424,7 +413,6 @@ msgstr "省电"
 
 #. 3-state set per device; the index is the value written over dbus.
 #: rog-control-center/ui/pages/system.slint:63
-#, fuzzy
 msgctxt "SystemPageData"
 msgid "Off"
 msgstr "关"
@@ -442,7 +430,6 @@ msgid "Multi-zone Strong"
 msgstr "强效多分区"
 
 #: rog-control-center/ui/pages/system.slint:207
-#, fuzzy
 msgctxt "PageSystem"
 msgid "Power settings"
 msgstr "电源设置"
@@ -458,7 +445,6 @@ msgid "CPU Status"
 msgstr "CPU 状态"
 
 #: rog-control-center/ui/pages/system.slint:251
-#, fuzzy
 msgctxt "PageSystem"
 msgid "Temperature:"
 msgstr "温度:"
@@ -510,7 +496,6 @@ msgid "Suspended"
 msgstr "已挂起"
 
 #: rog-control-center/ui/pages/system.slint:351
-#, fuzzy
 msgctxt "PageSystem"
 msgid "Fan Speeds"
 msgstr "风扇速度"
@@ -533,7 +518,7 @@ msgstr "中间风扇:"
 #: rog-control-center/ui/pages/system.slint:403
 msgctxt "PageSystem"
 msgid "Platform Profile"
-msgstr ""
+msgstr "平台配置"
 
 #: rog-control-center/ui/pages/system.slint:413
 msgctxt "PageSystem"
@@ -543,15 +528,14 @@ msgstr "高级"
 #: rog-control-center/ui/pages/system.slint:433
 msgctxt "PageSystem"
 msgid "Screenpad brightness"
-msgstr ""
+msgstr "屏幕板亮度"
 
 #: rog-control-center/ui/pages/system.slint:457
 msgctxt "PageSystem"
 msgid "Sync with primary"
-msgstr ""
+msgstr "与主屏同步"
 
 #: rog-control-center/ui/pages/system.slint:477
-#, fuzzy
 msgctxt "PageSystem"
 msgid "Armoury settings"
 msgstr "电源设置"
@@ -559,12 +543,12 @@ msgstr "电源设置"
 #: rog-control-center/ui/pages/system.slint:487
 msgctxt "no_asus_armoury_driver_1"
 msgid "The asus-armoury driver is not loaded"
-msgstr ""
+msgstr "未加载 asus-armoury 驱动"
 
 #: rog-control-center/ui/pages/system.slint:494
 msgctxt "no_asus_armoury_driver_2"
 msgid "For advanced features you will require a kernel with this driver added."
-msgstr ""
+msgstr "如需高级功能，请使用包含该驱动的内核"
 
 #: rog-control-center/ui/pages/system.slint:506
 msgctxt "PageSystem"
@@ -577,7 +561,6 @@ msgid "POST boot sound"
 msgstr "POST 开机音效"
 
 #: rog-control-center/ui/pages/system.slint:522
-#, fuzzy
 msgctxt "PageSystem"
 msgid "Screen Auto Brightness"
 msgstr "亮度"
@@ -595,12 +578,12 @@ msgstr "MiniLED 模式"
 #: rog-control-center/ui/pages/system.slint:557
 msgctxt "ppt_warning"
 msgid "The following settings are not applied until the toggle is enabled."
-msgstr ""
+msgstr "以下设置需先启用右侧开关才会生效。"
 
 #: rog-control-center/ui/pages/system.slint:562
 msgctxt "ppt_group_enabled"
 msgid "Enable Tuning"
-msgstr ""
+msgstr "启用调校"
 
 #: rog-control-center/ui/pages/system.slint:585
 msgctxt "requires_fan_curve_warning"
@@ -614,77 +597,76 @@ msgstr ""
 #: rog-control-center/ui/pages/system.slint:595
 msgctxt "ppt_pl1_spl"
 msgid "CPU Sustained Power Limit"
-msgstr ""
+msgstr "CPU 持续功耗限制"
 
 #: rog-control-center/ui/pages/system.slint:597
 msgctxt "ppt_pl1_spl_help"
 msgid ""
 "Long-term CPU power limit that affects sustained workload performance. "
 "Higher values may increase heat and power consumption."
-msgstr ""
+msgstr "CPU 长期功耗上限，影响持续负载下的性能表现。"
 
 #: rog-control-center/ui/pages/system.slint:613
 msgctxt "ppt_pl2_sppt"
 msgid "CPU Turbo Power Limit"
-msgstr ""
+msgstr "CPU 睿频功耗限制"
 
 #: rog-control-center/ui/pages/system.slint:615
 msgctxt "ppt_pl2_sppt_help"
 msgid ""
 "Short-term CPU power limit for boost periods. Controls maximum power during "
 "brief high-performance bursts."
-msgstr ""
+msgstr "CPU 短时睿频功耗上限，决定爆发阶段的功耗上限。"
 
 #: rog-control-center/ui/pages/system.slint:631
 msgctxt "ppt_pl3_fppt"
 msgid "CPU Fast Burst Power Limit"
-msgstr ""
+msgstr "CPU 快速爆发功耗限制"
 
 #: rog-control-center/ui/pages/system.slint:633
 msgctxt "ppt_pl3_fppt_help"
 msgid ""
 "Ultra-short duration power limit for instantaneous CPU bursts. Affects "
 "responsiveness during sudden workload spikes."
-msgstr ""
+msgstr "CPU 极短时爆发功耗上限，影响瞬时响应。"
 
 #: rog-control-center/ui/pages/system.slint:648
 msgctxt "ppt_fppt"
 msgid "Fast Package Power Limit"
-msgstr ""
+msgstr "封装快速功耗限制"
 
 #: rog-control-center/ui/pages/system.slint:650
 msgctxt "ppt_fppt_help"
 msgid ""
 "Ultra-short duration power limit for system package. Controls maximum power "
 "during millisecond-scale load spikes."
-msgstr ""
+msgstr "系统封装的极短时功耗上限，决定瞬时爆发上限。"
 
 #: rog-control-center/ui/pages/system.slint:666
 msgctxt "ppt_apu_sppt"
 msgid "APU Sustained Power Limit"
-msgstr ""
+msgstr "APU 持续功耗限制"
 
 #: rog-control-center/ui/pages/system.slint:668
 msgctxt "ppt_apu_sppt_help"
 msgid ""
 "Long-term power limit for integrated graphics and CPU combined. Affects "
 "sustained performance of APU-based workloads."
-msgstr ""
+msgstr "核显与 CPU 合计的长期功耗上限，影响持续负载表现。"
 
 #: rog-control-center/ui/pages/system.slint:684
 msgctxt "ppt_platform_sppt"
 msgid "Platform Sustained Power Limit"
-msgstr ""
+msgstr "平台持续功耗限制"
 
 #: rog-control-center/ui/pages/system.slint:686
 msgctxt "ppt_platform_sppt_help"
 msgid ""
 "Overall system power limit for sustained operations. Controls total platform "
 "power consumption over extended periods."
-msgstr ""
+msgstr "整机持续功耗上限，控制长时间运行的总功耗。"
 
 #: rog-control-center/ui/pages/system.slint:702
-#, fuzzy
 msgctxt "nv_dynamic_boost"
 msgid "GPU Power Boost"
 msgstr "区域供电"
@@ -694,12 +676,12 @@ msgctxt "nv_dynamic_boost_help"
 msgid ""
 "Additional power allocation for GPU dynamic boost. Higher values increase "
 "GPU performance but generate more heat."
-msgstr ""
+msgstr "为 GPU 动态加速分配的额外功耗。数值越高性能越强，但温度与噪音也越高。"
 
 #: rog-control-center/ui/pages/system.slint:720
 msgctxt "nv_tgp"
 msgid "GPU TGP"
-msgstr ""
+msgstr "GPU 功耗上限 (TGP)"
 
 #: rog-control-center/ui/pages/system.slint:722
 msgctxt "nv_tgp_help"
@@ -711,7 +693,6 @@ msgstr ""
 "功耗。"
 
 #: rog-control-center/ui/pages/system.slint:738
-#, fuzzy
 msgctxt "nv_temp_target"
 msgid "GPU Temperature Limit"
 msgstr "独显最高温度"
@@ -721,7 +702,7 @@ msgctxt "nv_temp_target_help"
 msgid ""
 "Maximum GPU temperature threshold in Celsius. GPU will throttle to maintain "
 "temperature below this limit."
-msgstr ""
+msgstr "GPU 温度上限（摄氏度）。超过该温度后 GPU 会降频以维持在此温度以下。"
 
 #: rog-control-center/ui/pages/system.slint:794
 msgctxt "PageSystem"
@@ -749,7 +730,6 @@ msgid "EPP for "
 msgstr "EPP 适用于 "
 
 #: rog-control-center/ui/pages/system.slint:826
-#, fuzzy
 msgctxt "PageSystem"
 msgid " Policy"
 msgstr " 策略"
@@ -953,7 +933,7 @@ msgstr "键盘和灯带"
 #: rog-control-center/ui/types/aura_types.slint:60
 msgctxt "Aura power zone"
 msgid "Ally"
-msgstr ""
+msgstr "Ally"
 
 #: rog-control-center/ui/types/aura_types.slint:70
 msgctxt "Aura brightness"
@@ -976,79 +956,66 @@ msgid "High"
 msgstr "亮"
 
 #: rog-control-center/ui/types/aura_types.slint:78
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Static"
 msgstr "恒亮"
 
 #: rog-control-center/ui/types/aura_types.slint:79
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Breathe"
 msgstr "呼吸"
 
 #: rog-control-center/ui/types/aura_types.slint:80
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Strobe"
 msgstr "频谱"
 
 #: rog-control-center/ui/types/aura_types.slint:81
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Rainbow"
 msgstr "彩虹"
 
 #: rog-control-center/ui/types/aura_types.slint:82
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Star"
 msgstr "星光"
 
 #: rog-control-center/ui/types/aura_types.slint:83
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Rain"
 msgstr "落雨"
 
 #: rog-control-center/ui/types/aura_types.slint:84
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Highlight"
 msgstr "高亮"
 
 #: rog-control-center/ui/types/aura_types.slint:85
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Laser"
 msgstr "激光"
 
 #: rog-control-center/ui/types/aura_types.slint:86
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Ripple"
 msgstr "涟漪"
 
 #: rog-control-center/ui/types/aura_types.slint:87
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Nothing"
 msgstr "无"
 
 #: rog-control-center/ui/types/aura_types.slint:88
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Pulse"
 msgstr "脉冲"
 
 #: rog-control-center/ui/types/aura_types.slint:89
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Comet"
 msgstr "彗星"
 
 #: rog-control-center/ui/types/aura_types.slint:90
-#, fuzzy
 msgctxt "Basic aura mode"
 msgid "Flash"
 msgstr "闪烁"
@@ -1171,7 +1138,7 @@ msgstr "睡眠"
 #: rog-control-center/ui/widgets/common.slint:125
 msgctxt "confirm_reset"
 msgid "Are you sure you want to reset this?"
-msgstr ""
+msgstr "确定要重置此项吗？"
 
 #: rog-control-center/ui/main_window.slint:80
 msgctxt "Menu1"
@@ -1216,7 +1183,6 @@ msgid "App Settings"
 msgstr "应用设置"
 
 #: rog-control-center/ui/main_window.slint:88
-#, fuzzy
 msgctxt "Menu8"
 msgid "About"
 msgstr "关于"
@@ -1473,3 +1439,157 @@ msgstr "关闭"
 msgctxt "dashboard_empty"
 msgid "No ASUS platform features detected.\nIs asusd running?"
 msgstr "未检测到华硕平台功能。\nasusd 是否正在运行？"
+
+#: rog-control-center/ui/widgets/top_nav.slint:210
+msgctxt "nav_lighting"
+msgid "Lighting"
+msgstr "灯效"
+
+#: rog-control-center/ui/pages/dashboard.slint:214
+msgctxt "tile_cpu"
+msgid "Processor"
+msgstr "处理器"
+
+#: rog-control-center/ui/pages/dashboard.slint:224
+msgctxt "tile_gpu"
+msgid "Graphics"
+msgstr "显卡"
+
+#: rog-control-center/ui/pages/dashboard.slint:235
+msgctxt "tile_cooling"
+msgid "Cooling"
+msgstr "散热"
+
+#: rog-control-center/ui/pages/dashboard.slint:60
+msgctxt "load_pct"
+msgid "Load"
+msgstr "负载"
+
+#: rog-control-center/ui/pages/dashboard.slint:241
+msgctxt "fan_gpu"
+msgid "GPU"
+msgstr "显卡"
+
+#: rog-control-center/ui/widgets/top_nav.slint:147
+msgctxt "status_ready"
+msgid "READY"
+msgstr "就绪"
+
+#: rog-control-center/ui/widgets/top_nav.slint:147
+msgctxt "status_offline"
+msgid "OFFLINE"
+msgstr "离线"
+
+#: rog-control-center/ui/pages/dashboard.slint:266
+msgctxt "perf_hint"
+msgid "Platform profile and fan behaviour, applied immediately."
+msgstr "平台配置与风扇策略，修改后立即生效。"
+
+msgctxt "PageGPU"
+msgid "Graphics options"
+msgstr "显卡选项"
+
+msgctxt "PageSlash"
+msgid "A-cover strip"
+msgstr "A 面灯带"
+
+msgctxt "PageAppSettings"
+msgid "Startup"
+msgstr "启动"
+
+msgctxt "PageAppSettings"
+msgid "Tray and notifications"
+msgstr "托盘与通知"
+
+msgctxt "PageAppSettings"
+msgid "Global shortcut"
+msgstr "全局快捷键"
+
+msgctxt "PageAppSettings"
+msgid "Settings"
+msgstr "设置"
+
+msgctxt "PageAppSettings"
+msgid "Setting up…"
+msgstr "正在设置…"
+
+msgctxt "PageAppSettings"
+msgid "Shortcut active"
+msgstr "快捷键已启用"
+
+msgctxt "PageAppSettings"
+msgid "No shortcut assigned"
+msgstr "未分配快捷键"
+
+msgctxt "PageAppSettings"
+msgid "Global shortcuts unavailable"
+msgstr "全局快捷键不可用"
+
+msgctxt "PageAppSettings"
+msgid "Set up shortcut"
+msgstr "设置快捷键"
+
+msgctxt "PageAppSettings"
+msgid "Configure shortcut"
+msgstr "配置快捷键"
+
+msgctxt "PageAppSettings"
+msgid "Armory/ROG key to show/hide window (keep app running in background)"
+msgstr "Armory/ROG 键显示或隐藏窗口（应用保持后台运行）"
+
+msgctxt "PageFans"
+msgid "Fan Curves"
+msgstr "风扇曲线"
+
+msgctxt "PageAnime"
+msgid "AniMe Matrix"
+msgstr "AniMe 光显矩阵"
+
+msgctxt "PageAnime"
+msgid "Display"
+msgstr "显示"
+
+msgctxt "PageAnime"
+msgid "Built-in animations"
+msgstr "内置动画"
+
+msgctxt "PageAnime"
+msgid "Close"
+msgstr "关闭"
+
+msgctxt "anime_off"
+msgid "Off"
+msgstr "关"
+
+msgctxt "PageAura"
+msgid "Effect"
+msgstr "效果"
+
+msgctxt "PageAura"
+msgid "Effect options"
+msgstr "效果选项"
+
+msgctxt "PageAura"
+msgid "Close"
+msgstr "关闭"
+
+
+msgctxt "PageSystem"
+msgid "Close"
+msgstr "关闭"
+
+msgctxt "PageAbout"
+msgid "About"
+msgstr "关于"
+
+msgctxt "SystemSlider"
+msgid "Help"
+msgstr "帮助"
+
+msgctxt "SystemSlider"
+msgid "Reset"
+msgstr "重置"
+
+msgctxt "SystemSlider"
+msgid "OK"
+msgstr "确定"

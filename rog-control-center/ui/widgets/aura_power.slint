@@ -1,10 +1,74 @@
-import { Palette, VerticalBox, HorizontalBox, GroupBox } from "std-widgets.slint";
-import { SystemToggleVert, SystemDropdown } from "common.slint";
-import { PowerZones } from "../types/aura_types.slint";
+// Power-zone configuration cards for the Aura "Power Settings" panel.
+//
+// Replaces the old GroupBox/SystemToggleVert look: each zone is a card with a
+// four-across row of switches. The whole switch tile is clickable, which is
+// more forgiving than hitting the small switch itself.
+import { Theme } from "theme.slint";
+import { Select } from "cyber.slint";
+
+// Compact vertical switch tile used in the four-across row.
+component PowerSwitch inherits Rectangle {
+    in property <string> text: "";
+    in property <bool> enabled: true;
+    in property <color> accent: Theme.accent-lighting;
+    in-out property <bool> checked;
+    callback toggled(bool);
+
+    min-width: 104px;
+    height: 66px;
+    border-radius: Theme.radius-sm;
+    background: root.checked
+        ? root.accent.mix(Theme.surface-card, 16%)
+        : Theme.surface-card;
+    border-width: 1px;
+    border-color: root.checked ? root.accent : Theme.border;
+    opacity: root.enabled ? 1.0 : 0.45;
+
+    animate background { duration: 120ms; }
+
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+
+    VerticalLayout {
+        alignment: center;
+        spacing: 6px;
+
+        Text {
+            text: root.text;
+            font-size: Theme.font-sm;
+            color: root.checked ? root.accent : Theme.text-muted;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+
+        Rectangle {
+            width: 40px;
+            height: 22px;
+            border-radius: 11px;
+            background: root.checked ? root.accent.with-alpha(0.85) : Theme.surface-sunken;
+            border-width: 1px;
+            border-color: root.checked ? root.accent : Theme.border-strong;
+
+            Rectangle {
+                width: 16px;
+                height: 16px;
+                border-radius: 8px;
+                y: 2px;
+                x: root.checked ? parent.width - self.width - 3px : 3px;
+                background: root.checked ? Theme.accent-foreground : Theme.text-muted;
+                animate x { duration: 120ms; }
+            }
+        }
+    }
+}
 
 export component AuraPowerGroup inherits Rectangle {
-    min-width: row.min-width;
-    opacity: 0.9;
     in-out property <string> group-title;
     in-out property <bool> boot_checked;
     in-out property <bool> awake_checked;
@@ -15,54 +79,56 @@ export component AuraPowerGroup inherits Rectangle {
     callback sleep_toggled(bool);
     callback shutdown_toggled(bool);
 
-    VerticalBox {
-        spacing: 10px;
+    background: Theme.surface-card;
+    border-radius: Theme.radius-lg;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: Theme.space-md;
+        spacing: Theme.space-sm;
+        alignment: start;
+
         Text {
-            font-size: 18px;
-            color: Palette.alternate-foreground;
-            horizontal-alignment: TextHorizontalAlignment.center;
-            text <=> root.group-title;
+            text: root.group-title;
+            font-size: Theme.font-lg;
+            font-weight: 700;
+            color: Theme.text;
+            vertical-alignment: center;
         }
 
-        row := HorizontalBox {
-            alignment: LayoutAlignment.center;
-            SystemToggleVert {
-                min-width: 128px;
-                max-height: 42px;
+        HorizontalLayout {
+            spacing: Theme.space-sm;
+
+            PowerSwitch {
                 text: @tr("Boot");
                 checked <=> root.boot_checked;
-                toggled => {
-                    root.boot_toggled(self.checked);
+                toggled(v) => {
+                    root.boot_toggled(v);
                 }
             }
 
-            SystemToggleVert {
-                min-width: 128px;
-                max-height: 42px;
+            PowerSwitch {
                 text: @tr("Awake");
                 checked <=> root.awake_checked;
-                toggled => {
-                    root.awake_toggled(self.checked);
+                toggled(v) => {
+                    root.awake_toggled(v);
                 }
             }
 
-            SystemToggleVert {
-                min-width: 128px;
-                max-height: 42px;
+            PowerSwitch {
                 text: @tr("Sleep");
                 checked <=> root.sleep_checked;
-                toggled => {
-                    root.sleep_toggled(self.checked);
+                toggled(v) => {
+                    root.sleep_toggled(v);
                 }
             }
 
-            SystemToggleVert {
-                min-width: 128px;
-                max-height: 42px;
+            PowerSwitch {
                 text: @tr("Shutdown");
                 checked <=> root.shutdown_checked;
-                toggled => {
-                    root.shutdown_toggled(self.checked);
+                toggled(v) => {
+                    root.shutdown_toggled(v);
                 }
             }
         }
@@ -70,8 +136,6 @@ export component AuraPowerGroup inherits Rectangle {
 }
 
 export component AuraPowerGroupOld inherits Rectangle {
-    min-width: row.min-width;
-    opacity: 0.9;
     in-out property <int> current_zone;
     in-out property <[int]> zones;
     in-out property <[string]> zone_strings;
@@ -84,55 +148,67 @@ export component AuraPowerGroupOld inherits Rectangle {
     callback sleep_toggled(bool);
     callback selected_zone(int);
 
-    VerticalBox {
-        spacing: 10px;
-        Text {
-            font-size: 18px;
-            color: Palette.alternate-foreground;
-            horizontal-alignment: TextHorizontalAlignment.center;
-            text <=> root.group-title;
+    background: Theme.surface-card;
+    border-radius: Theme.radius-lg;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: Theme.space-md;
+        spacing: Theme.space-sm;
+        alignment: start;
+
+        HorizontalLayout {
+            spacing: Theme.space-sm;
+            cross-axis-alignment: center;
+
+            Text {
+                text: root.group-title;
+                font-size: Theme.font-lg;
+                font-weight: 700;
+                color: Theme.text;
+                vertical-alignment: center;
+            }
+
+            Rectangle {}
+
+            Select {
+                min-width: 200px;
+                accent: Theme.accent-lighting;
+                model <=> root.zone_strings;
+                current-index <=> root.current_zone;
+                text: root.current_zone >= 0 && root.current_zone < root.zone_strings.length
+                    ? root.zone_strings[root.current_zone] : "";
+                selected(i) => {
+                    root.selected_zone(i);
+                }
+            }
         }
 
-        row := HorizontalBox {
-            alignment: LayoutAlignment.center;
+        HorizontalLayout {
+            spacing: Theme.space-sm;
 
-            SystemDropdown {
-                text: @tr("Zone Selection");
-                current_index <=> root.current_zone;
-                current_value: root.zone_strings[root.current_zone];
-                model <=> root.zone_strings;
-                selected => {
-                    root.selected_zone(root.current_zone);
-                }
-            }
-
-            SystemToggleVert {
-                min-width: 128px;
-                max-height: 42px;
+            PowerSwitch {
                 text: @tr("Boot");
                 checked <=> root.boot_checked;
-                toggled => {
-                    root.boot_toggled(self.checked);
+                toggled(v) => {
+                    root.boot_toggled(v);
                 }
             }
 
-            SystemToggleVert {
-                min-width: 128px;
-                max-height: 42px;
+            PowerSwitch {
                 text: @tr("Awake");
                 checked <=> root.awake_checked;
-                toggled => {
-                    root.awake_toggled(self.checked);
+                toggled(v) => {
+                    root.awake_toggled(v);
                 }
             }
 
-            SystemToggleVert {
-                min-width: 128px;
-                max-height: 42px;
+            PowerSwitch {
                 text: @tr("Sleep");
                 checked <=> root.sleep_checked;
-                toggled => {
-                    root.sleep_toggled(self.checked);
+                toggled(v) => {
+                    root.sleep_toggled(v);
                 }
             }
         }

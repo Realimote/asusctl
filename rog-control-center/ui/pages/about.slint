@@ -1,97 +1,89 @@
-import { ScrollView, VerticalBox } from "std-widgets.slint";
+// About page: identity header plus the usual project blurb.
+import { ScrollView } from "std-widgets.slint";
 import { SectionCard } from "../widgets/modern.slint";
+import { SectionTitle, SectionBody } from "../widgets/cyber.slint";
 import { Theme } from "../widgets/theme.slint";
 
 export component PageAbout inherits Rectangle {
     clip: true;
+
     ScrollView {
         VerticalLayout {
             padding: Theme.space-lg;
             spacing: Theme.space-md;
-            alignment: LayoutAlignment.start;
+            alignment: start;
 
-            // App identity header
+            // ── App identity ────────────────────────────────────────────
             VerticalLayout {
                 spacing: Theme.space-xs;
-                alignment: LayoutAlignment.center;
+                alignment: center;
                 Image {
                     source: @image-url("../../data/rog-control-center.png");
                     height: 64px;
                     image-fit: contain;
                 }
                 Text {
-                    vertical-alignment: TextVerticalAlignment.center;
-                    horizontal-alignment: TextHorizontalAlignment.center;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
                     text: "ROG Control Center";
                     font-size: Theme.font-title;
                     font-weight: 700;
+                    color: Theme.text;
                 }
             }
 
             SectionCard {
-                Text {
-                    wrap: TextWrap.word-wrap;
+                SectionTitle {
+                    icon: @image-url("../icons/info.svg");
+                    accent: Theme.accent-about;
+                    title: @tr("About");
+                }
+                SectionBody {
                     text: @tr("\nA powerful graphical interface for managing ASUS ROG, TUF, and ProArt laptops on Linux. It acts as the official GUI for the asusctl toolset, allowing for seamless hardware tuning without the command line.");
                 }
             }
 
             SectionCard {
-                VerticalLayout {
-                    spacing: Theme.space-xs;
-                    Text {
-                        font-weight: 700;
-                        font-size: Theme.font-base;
-                        text: @tr("Key Features:");
-                    }
-                    Text {
-                        wrap: TextWrap.word-wrap;
-                        text: @tr("      • Performance: Switch power profiles and customize fan curves.\n      • Aura Sync: Control keyboard backlighting and LED effects.\n      • Battery Health: Set charge limits to extend battery longevity.\n      • Display: Toggle Panel Overdrive and refresh rates.\n      • AniMe Matrix: Control AniMe Matrix displays.");
-                    }
+                SectionTitle {
+                    icon: @image-url("../icons/zap.svg");
+                    accent: Theme.accent-about;
+                    title: @tr("Key Features:");
+                }
+                SectionBody {
+                    text: @tr("      • Performance: Switch power profiles and customize fan curves.\n      • Aura Sync: Control keyboard backlighting and LED effects.\n      • Battery Health: Set charge limits to extend battery longevity.\n      • Display: Toggle Panel Overdrive and refresh rates.\n      • AniMe Matrix: Control AniMe Matrix displays.");
                 }
             }
 
             SectionCard {
-                VerticalLayout {
-                    spacing: Theme.space-xs;
-                    Text {
-                        font-weight: 700;
-                        font-size: Theme.font-base;
-                        text: @tr("Requirements:");
-                    }
-                    Text {
-                        wrap: TextWrap.word-wrap;
-                        text: @tr("      This software requires kernel version 6.19 or later. However due to active development, the latest kernel is always the recommended one.");
-                    }
+                SectionTitle {
+                    icon: @image-url("../icons/cpu.svg");
+                    accent: Theme.accent-about;
+                    title: @tr("Requirements:");
+                }
+                SectionBody {
+                    text: @tr("      This software requires kernel version 6.19 or later. However due to active development, the latest kernel is always the recommended one.");
                 }
             }
 
             SectionCard {
-                VerticalLayout {
-                    spacing: Theme.space-xs;
-                    Text {
-                        font-weight: 700;
-                        font-size: Theme.font-base;
-                        text: @tr("License:");
-                    }
-                    Text {
-                        wrap: TextWrap.word-wrap;
-                        text: @tr("      This project is open-source software licensed under the Mozilla Public License 2.0 (MPL-2.0).");
-                    }
+                SectionTitle {
+                    icon: @image-url("../icons/scale.svg");
+                    accent: Theme.accent-about;
+                    title: @tr("License:");
+                }
+                SectionBody {
+                    text: @tr("      This project is open-source software licensed under the Mozilla Public License 2.0 (MPL-2.0).");
                 }
             }
 
             SectionCard {
-                VerticalLayout {
-                    spacing: Theme.space-xs;
-                    Text {
-                        font-weight: 700;
-                        font-size: Theme.font-base;
-                        text: @tr("Links:");
-                    }
-                    Text {
-                        wrap: TextWrap.word-wrap;
-                        text: @tr("      Source Code: https://github.com/OpenGamingCollective/asusctl\n      Website: https://asus-linux.org/");
-                    }
+                SectionTitle {
+                    icon: @image-url("../icons/external-link.svg");
+                    accent: Theme.accent-about;
+                    title: @tr("Links:");
+                }
+                SectionBody {
+                    text: @tr("      Source Code: https://github.com/OpenGamingCollective/asusctl\n      Website: https://asus-linux.org/");
                 }
             }
         }

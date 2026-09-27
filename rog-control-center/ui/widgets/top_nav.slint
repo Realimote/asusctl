@@ -1,0 +1,285 @@
+// Application chrome: the brand bar and the top tab navigation that replace
+// the former left-hand rail.
+//
+// Message ids are reused from the old sidebar (`Menu0`…`Menu9`) wherever a tab
+// maps one-to-one onto a page, so the existing gettext catalogues keep working;
+// only the merged lighting group needs a new id.
+import { Theme } from "theme.slint";
+import { LineIcon, Chip } from "cyber.slint";
+import { Pages } from "../pages/dashboard.slint";
+
+// ── One tab of the top navigation ──────────────────────────────────────
+export component NavTab inherits Rectangle {
+    in property <image> icon;
+    in property <string> label: "";
+    in property <bool> selected: false;
+    in property <bool> available: true;
+    in property <color> accent: Theme.accent;
+    callback clicked;
+
+    visible: root.available;
+    min-width: 112px;
+    height: 40px;
+    border-radius: Theme.radius-md;
+    // Opaque (not `with-alpha`): the selected tab carries an accent glow that
+    // would otherwise show through a translucent fill.
+    background: root.selected
+        ? root.accent.mix(Theme.surface-card, 16%)
+        : Theme.surface-card;
+    border-width: 1px;
+    border-color: root.selected
+        ? root.accent.with-alpha(0.7)
+        : Theme.border;
+    drop-shadow-blur: root.selected ? 12px : 0px;
+    drop-shadow-color: root.accent.with-alpha(0.3);
+
+    animate background { duration: 120ms; }
+    animate border-color { duration: 120ms; }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    HorizontalLayout {
+        cross-axis-alignment: center;
+        padding-left: Theme.space-md;
+        padding-right: Theme.space-md;
+        spacing: Theme.space-sm;
+        alignment: center;
+
+        LineIcon {
+            source: root.icon;
+            icon-size: 16px;
+            tint: root.selected ? root.accent : Theme.text-muted;
+        }
+
+        Text {
+            text: root.label;
+            font-size: Theme.font-md;
+            font-weight: root.selected ? 600 : 400;
+            color: root.selected ? root.accent : Theme.text-control;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+    }
+
+    hover := Rectangle {
+        border-radius: parent.border-radius;
+        background: white;
+        opacity: ta.has-hover && !root.selected ? (ta.pressed ? 0.10 : 0.04) : 0.0;
+        animate opacity { duration: 90ms; }
+    }
+}
+
+// ── Brand bar: mark, product name and version badge ────────────────────
+export component BrandBar inherits Rectangle {
+    in property <string> device-name: "";
+    in property <string> version: "";
+    in property <bool> connected: true;
+    callback quit;
+
+    height: Theme.topbar-height;
+    background: Theme.surface-card;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        cross-axis-alignment: center;
+        padding-left: Theme.space-lg;
+        padding-right: Theme.space-md;
+        spacing: Theme.space-sm;
+
+        // Brand mark: a rounded accent tile with the bolt inside.
+        Rectangle {
+            width: 30px;
+            height: 30px;
+            border-radius: Theme.radius-sm;
+            background: @linear-gradient(135deg, Theme.accent-overview.with-alpha(0.9) 0%, Theme.accent-lighting.with-alpha(0.9) 100%);
+            drop-shadow-blur: 12px;
+            drop-shadow-color: Theme.accent-overview.with-alpha(0.35);
+            LineIcon {
+                source: @image-url("../icons/zap.svg");
+                icon-size: 17px;
+                tint: Theme.accent-foreground;
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+            }
+        }
+
+        Text {
+            text: "ROG CONTROL CENTER";
+            font-size: Theme.font-lg;
+            font-weight: 700;
+            color: Theme.text;
+            vertical-alignment: center;
+            letter-spacing: 0.5px;
+        }
+
+        if root.version != "": Rectangle {
+            height: 20px;
+            border-radius: 6px;
+            background: @linear-gradient(90deg, Theme.accent-lighting.with-alpha(0.9) 0%, Theme.accent-overview.with-alpha(0.9) 100%);
+            HorizontalLayout {
+                cross-axis-alignment: center;
+                padding-left: Theme.space-sm;
+                padding-right: Theme.space-sm;
+                Text {
+                    text: "v" + root.version;
+                    font-size: Theme.font-xs;
+                    font-weight: 700;
+                    color: white;
+                    vertical-alignment: center;
+                }
+            }
+        }
+
+        Rectangle {}
+
+        if root.device-name != "": Chip {
+            text: root.device-name;
+            tone: Theme.text-muted;
+        }
+
+        Chip {
+            text: root.connected ? @tr("status_ready" => "READY") : @tr("status_offline" => "OFFLINE");
+            tone: root.connected ? Theme.status-ok : Theme.status-danger;
+        }
+
+        // Quit, mirroring the old sidebar's exit affordance.
+        quit-btn := Rectangle {
+            width: 30px;
+            height: 30px;
+            border-radius: Theme.radius-sm;
+            background: quit-ta.has-hover ? Theme.surface-raised : transparent;
+
+            quit-ta := TouchArea {
+                mouse-cursor: pointer;
+                clicked => {
+                    root.quit();
+                }
+            }
+
+            LineIcon {
+                source: @image-url("../icons/power.svg");
+                icon-size: 16px;
+                tint: quit-ta.has-hover ? Theme.status-danger : Theme.text-muted;
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+            }
+        }
+    }
+}
+
+// ── Top tab row ────────────────────────────────────────────────────────
+export component NavBar inherits Rectangle {
+    // Availability, indexed by the `Pages` global.
+    in property <[bool]> available;
+    // `available[Pages.aura] || available[Pages.anime] || available[Pages.slash]`
+    in property <bool> lighting-available: true;
+    in-out property <int> current;
+    callback selected(int);
+
+    height: Theme.nav-height;
+    background: Theme.surface-base;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding-left: Theme.space-lg;
+        padding-right: Theme.space-lg;
+        padding-top: Theme.space-sm;
+        padding-bottom: Theme.space-sm;
+        spacing: Theme.space-sm;
+        alignment: start;
+
+        NavTab {
+            icon: @image-url("../icons/gauge.svg");
+            label: @tr("Menu0" => "Dashboard");
+            accent: Theme.accent-overview;
+            selected: root.current == Pages.dashboard;
+            clicked => {
+                root.selected(Pages.dashboard);
+            }
+        }
+
+        NavTab {
+            icon: @image-url("../icons/lightbulb.svg");
+            label: @tr("nav_lighting" => "Lighting");
+            accent: Theme.accent-lighting;
+            available: root.lighting-available;
+            selected: root.current == Pages.aura || root.current == Pages.anime
+                || root.current == Pages.slash;
+            clicked => {
+                root.selected(Pages.aura);
+            }
+        }
+
+        NavTab {
+            icon: @image-url("../icons/fan.svg");
+            label: @tr("Menu5" => "Fans");
+            accent: Theme.accent-thermal;
+            available: root.available[Pages.fans];
+            selected: root.current == Pages.fans;
+            clicked => {
+                root.selected(Pages.fans);
+            }
+        }
+
+        NavTab {
+            icon: @image-url("../icons/monitor.svg");
+            label: @tr("Menu6" => "GPU");
+            accent: Theme.accent-gpu;
+            selected: root.current == Pages.gpu;
+            clicked => {
+                root.selected(Pages.gpu);
+            }
+        }
+
+        NavTab {
+            icon: @image-url("../icons/battery-charging.svg");
+            label: @tr("Menu9" => "Battery");
+            accent: Theme.accent-battery;
+            available: root.available[Pages.battery];
+            selected: root.current == Pages.battery;
+            clicked => {
+                root.selected(Pages.battery);
+            }
+        }
+
+        NavTab {
+            icon: @image-url("../icons/cpu.svg");
+            label: @tr("Menu1" => "System");
+            accent: Theme.accent-system;
+            available: root.available[Pages.system];
+            selected: root.current == Pages.system;
+            clicked => {
+                root.selected(Pages.system);
+            }
+        }
+
+        NavTab {
+            icon: @image-url("../icons/settings.svg");
+            label: @tr("Menu7" => "Settings");
+            accent: Theme.accent-settings;
+            selected: root.current == Pages.settings;
+            clicked => {
+                root.selected(Pages.settings);
+            }
+        }
+
+        NavTab {
+            icon: @image-url("../icons/info.svg");
+            label: @tr("Menu8" => "About");
+            accent: Theme.accent-about;
+            selected: root.current == Pages.about;
+            clicked => {
+                root.selected(Pages.about);
+            }
+        }
+
+        Rectangle {}
+    }
+}

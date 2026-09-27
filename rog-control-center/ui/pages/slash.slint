@@ -1,6 +1,7 @@
+// Slash (A-cover LED strip) page: brightness, animation and visibility triggers.
 import { ScrollView } from "std-widgets.slint";
-import { SystemDropdown, SystemSlider, SystemToggle } from "../widgets/common.slint";
-import { PageHeader, InfoBanner } from "../widgets/modern.slint";
+import { SectionCard, InfoBanner } from "../widgets/modern.slint";
+import { SectionTitle, ToggleRow, SliderRow, Select } from "../widgets/cyber.slint";
 import { Theme } from "../widgets/theme.slint";
 
 export global SlashPageData {
@@ -34,112 +35,171 @@ export global SlashPageData {
 export component PageSlash inherits Rectangle {
     clip: true;
 
+    // Rows here all live inside a section card.
+    property <length> card-inner-width: root.width - Theme.space-lg * 2 - Theme.space-md * 2;
+
     ScrollView {
         VerticalLayout {
             padding: Theme.space-lg;
-            spacing: Theme.space-sm;
-            alignment: LayoutAlignment.start;
+            spacing: Theme.space-md;
+            alignment: start;
 
-            PageHeader {
-                icon: "✨";
+            SectionTitle {
+                icon: @image-url("../icons/sparkles.svg");
+                accent: Theme.accent-slash;
                 title: @tr("Slash lighting");
+                status: SlashPageData.enabled ? "" : @tr("slash_off" => "Off");
             }
 
-            SystemToggle {
-                text: @tr("Enable A-cover lighting");
-                checked <=> SlashPageData.enabled;
-                toggled => {
-                    SlashPageData.cb_enabled(SlashPageData.enabled);
+            // ── Strip settings ──────────────────────────────────────────
+            SectionCard {
+                SectionTitle {
+                    icon: @image-url("../icons/waves.svg");
+                    accent: Theme.accent-slash;
+                    title: @tr("A-cover strip");
+                }
+
+                ToggleRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-slash;
+                    text: @tr("Enable A-cover lighting");
+                    checked <=> SlashPageData.enabled;
+                    toggled => {
+                        SlashPageData.cb_enabled(SlashPageData.enabled);
+                    }
+                }
+
+                SliderRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-slash;
+                    enabled: SlashPageData.enabled;
+                    text: @tr("Brightness");
+                    minimum: 0;
+                    maximum: 255;
+                    value: SlashPageData.brightness;
+                    moved(v) => {
+                        SlashPageData.brightness = Math.round(v);
+                    }
+                    released(v) => {
+                        SlashPageData.brightness = Math.round(v);
+                        SlashPageData.cb_brightness(SlashPageData.brightness);
+                    }
+                }
+
+                SliderRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-slash;
+                    enabled: SlashPageData.enabled;
+                    text: @tr("Animation speed");
+                    minimum: 0;
+                    maximum: 5;
+                    value: SlashPageData.interval;
+                    moved(v) => {
+                        SlashPageData.interval = Math.round(v);
+                    }
+                    released(v) => {
+                        SlashPageData.interval = Math.round(v);
+                        SlashPageData.cb_interval(SlashPageData.interval);
+                    }
+                }
+
+                if SlashPageData.mode_choices.length > 0: HorizontalLayout {
+                    width: root.card-inner-width;
+                    spacing: Theme.space-md;
+                    cross-axis-alignment: center;
+
+                    Text {
+                        width: 150px;
+                        text: @tr("Animation");
+                        font-size: Theme.font-base;
+                        color: SlashPageData.enabled ? Theme.text-control : Theme.text-dim;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+
+                    Rectangle {}
+
+                    Select {
+                        min-width: 200px;
+                        accent: Theme.accent-slash;
+                        enabled: SlashPageData.enabled;
+                        model <=> SlashPageData.mode_choices;
+                        current-index <=> SlashPageData.mode;
+                        text: SlashPageData.mode >= 0 && SlashPageData.mode < SlashPageData.mode_choices.length
+                            ? SlashPageData.mode_choices[SlashPageData.mode] : "";
+                        selected(i) => {
+                            SlashPageData.cb_mode(i);
+                        }
+                    }
                 }
             }
 
-            SystemSlider {
-                text: @tr("Brightness");
-                minimum: 0;
-                maximum: 255;
-                has_reset: false;
-                enabled <=> SlashPageData.enabled;
-                value: SlashPageData.brightness;
-                released => {
-                    SlashPageData.brightness = Math.round(self.value);
-                    SlashPageData.cb_brightness(SlashPageData.brightness);
+            // ── Visibility triggers ─────────────────────────────────────
+            SectionCard {
+                SectionTitle {
+                    icon: @image-url("../icons/activity.svg");
+                    accent: Theme.accent-slash;
+                    title: @tr("Visibility triggers");
                 }
-            }
 
-            SystemSlider {
-                text: @tr("Animation speed");
-                minimum: 0;
-                maximum: 5;
-                has_reset: false;
-                enabled <=> SlashPageData.enabled;
-                value: SlashPageData.interval;
-                released => {
-                    SlashPageData.interval = Math.round(self.value);
-                    SlashPageData.cb_interval(SlashPageData.interval);
+                ToggleRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-slash;
+                    text: @tr("Show on boot");
+                    checked <=> SlashPageData.show_on_boot;
+                    toggled => {
+                        SlashPageData.cb_show_on_boot(SlashPageData.show_on_boot);
+                    }
                 }
-            }
 
-            if SlashPageData.mode_choices.length > 0: SystemDropdown {
-                text: @tr("Animation");
-                current_index <=> SlashPageData.mode;
-                current_value: SlashPageData.mode_choices[SlashPageData.mode];
-                model <=> SlashPageData.mode_choices;
-                enabled <=> SlashPageData.enabled;
-                selected => {
-                    SlashPageData.cb_mode(SlashPageData.mode);
+                ToggleRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-slash;
+                    text: @tr("Show on shutdown");
+                    checked <=> SlashPageData.show_on_shutdown;
+                    toggled => {
+                        SlashPageData.cb_show_on_shutdown(SlashPageData.show_on_shutdown);
+                    }
                 }
-            }
 
-            PageHeader {
-                icon: "👁";
-                title: @tr("Visibility triggers");
-            }
-
-            SystemToggle {
-                text: @tr("Show on boot");
-                checked <=> SlashPageData.show_on_boot;
-                toggled => {
-                    SlashPageData.cb_show_on_boot(SlashPageData.show_on_boot);
+                ToggleRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-slash;
+                    text: @tr("Show on sleep");
+                    checked <=> SlashPageData.show_on_sleep;
+                    toggled => {
+                        SlashPageData.cb_show_on_sleep(SlashPageData.show_on_sleep);
+                    }
                 }
-            }
 
-            SystemToggle {
-                text: @tr("Show on shutdown");
-                checked <=> SlashPageData.show_on_shutdown;
-                toggled => {
-                    SlashPageData.cb_show_on_shutdown(SlashPageData.show_on_shutdown);
+                ToggleRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-slash;
+                    text: @tr("Show on battery");
+                    checked <=> SlashPageData.show_on_battery;
+                    toggled => {
+                        SlashPageData.cb_show_on_battery(SlashPageData.show_on_battery);
+                    }
                 }
-            }
 
-            SystemToggle {
-                text: @tr("Show on sleep");
-                checked <=> SlashPageData.show_on_sleep;
-                toggled => {
-                    SlashPageData.cb_show_on_sleep(SlashPageData.show_on_sleep);
+                ToggleRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-slash;
+                    text: @tr("Show low-battery warning");
+                    checked <=> SlashPageData.show_battery_warning;
+                    toggled => {
+                        SlashPageData.cb_show_battery_warning(SlashPageData.show_battery_warning);
+                    }
                 }
-            }
 
-            SystemToggle {
-                text: @tr("Show on battery");
-                checked <=> SlashPageData.show_on_battery;
-                toggled => {
-                    SlashPageData.cb_show_on_battery(SlashPageData.show_on_battery);
-                }
-            }
-
-            SystemToggle {
-                text: @tr("Show low-battery warning");
-                checked <=> SlashPageData.show_battery_warning;
-                toggled => {
-                    SlashPageData.cb_show_battery_warning(SlashPageData.show_battery_warning);
-                }
-            }
-
-            SystemToggle {
-                text: @tr("Show when lid is closed");
-                checked <=> SlashPageData.show_on_lid_closed;
-                toggled => {
-                    SlashPageData.cb_show_on_lid_closed(SlashPageData.show_on_lid_closed);
+                ToggleRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-slash;
+                    text: @tr("Show when lid is closed");
+                    checked <=> SlashPageData.show_on_lid_closed;
+                    toggled => {
+                        SlashPageData.cb_show_on_lid_closed(SlashPageData.show_on_lid_closed);
+                    }
                 }
             }
 

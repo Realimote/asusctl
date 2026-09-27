@@ -168,6 +168,8 @@ pub fn setup_window(
         dmi.product_family.clone()
     };
     ui.set_device_name(device_name.into());
+    // Shown in the brand bar's version badge.
+    ui.set_version(crate::VERSION.into());
 
     ui.on_exit_app(move || {
         if let Err(e) = slint::quit_event_loop() {

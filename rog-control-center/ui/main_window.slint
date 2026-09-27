@@ -2,7 +2,8 @@ import { Palette, Button, VerticalBox } from "std-widgets.slint";
 import { AppSize } from "globals.slint";
 import { PageDashboard, Pages, NavState } from "pages/dashboard.slint";
 import { PageSystem, SystemPageData, AttrMinMax } from "pages/system.slint";
-import { SideBar } from "widgets/sidebar.slint";
+import { BrandBar, NavBar } from "widgets/top_nav.slint";
+import { TabStrip } from "widgets/cyber.slint";
 import { PageAbout } from "pages/about.slint";
 import { PageFans } from "pages/fans.slint";
 import { PageAnime, AnimePageData } from "pages/anime.slint";
@@ -29,6 +30,8 @@ export component MainWindow inherits Window {
     default-font-size: Theme.font-base;
     default-font-weight: 400;
     icon: @image-url("../data/rog-control-center.png");
+    // Availability flags, indexed by the `Pages` global. The top navigation
+    // groups them into fewer tabs, but the model itself is unchanged.
     in property <[bool]> sidebar_items_available: [
         true, // Dashboard
         true, // System Control
@@ -41,8 +44,17 @@ export component MainWindow inherits Window {
         true, // App Settings
         true, // About
     ];
+    // Lighting group: the Aura page doubles as the entry point, and this strip
+    // switches between the three lighting pages from any of them.
+    private property <bool> in_lighting_group:
+        NavState.page == Pages.aura || NavState.page == Pages.anime
+        || NavState.page == Pages.slash;
+    private property <int> lighting_tab:
+        NavState.page == Pages.anime ? 1 : (NavState.page == Pages.slash ? 2 : 0);
     private property <bool> show_notif;
     in property <string> device_name: "";
+    // Shown in the brand bar badge; set from the crate version at startup.
+    in property <string> version: "";
     private property <bool> fade_cover;
     private property <bool> toast: false;
     private property <string> toast_text: "I show when something is waiting";
@@ -76,133 +88,160 @@ export component MainWindow inherits Window {
 
     width: AppSize.width;
     height: AppSize.height;
-    background: Theme.surface-card;
+    background: Theme.surface-base;
 
-    HorizontalLayout {
+    VerticalLayout {
         padding: 0px;
+        spacing: 0px;
 
-        side-bar := SideBar {
-            current-item <=> NavState.page;
-            model: [
-                @tr("Menu0" => "Dashboard"),
-                @tr("Menu1" => "System"),
-                @tr("Menu2" => "Aura"),
-                @tr("Menu3" => "AniMe"),
-                @tr("Menu4" => "Slash"),
-                @tr("Menu5" => "Fans"),
-                @tr("Menu6" => "GPU"),
-                @tr("Menu9" => "Battery"),
-                @tr("Menu7" => "Settings"),
-                @tr("Menu8" => "About"),
-            ];
-            icons: [
-                "🏠",
-                "🎛",
-                "🌈",
-                "📺",
-                "✨",
-                "🌀",
-                "🎮",
-                "🔋",
-                "🔧",
-                "ℹ",
-            ];
-            available: root.sidebar_items_available;
-            exit-app => {
+        BrandBar {
+            device-name: root.device_name;
+            version: root.version;
+            quit => {
                 root.exit-app();
             }
         }
 
-        Rectangle {
-            background: Theme.surface;
-            if(side-bar.current-item == Pages.dashboard): PageDashboard {
-                width: root.width - side-bar.width;
-                height: root.height;
-                available: root.sidebar_items_available;
-                nav-target <=> NavState.page;
+        NavBar {
+            available: root.sidebar_items_available;
+            lighting-available: root.sidebar_items_available[Pages.aura]
+                || root.sidebar_items_available[Pages.anime]
+                || root.sidebar_items_available[Pages.slash];
+            current <=> NavState.page;
+            selected(page) => {
+                NavState.page = page;
             }
+        }
 
-            if(side-bar.current-item == Pages.system): page := PageSystem {
-                width: root.width - side-bar.width;
-                height: root.height;
-            }
+        content := Rectangle {
+            vertical-stretch: 1;
+            horizontal-stretch: 1;
+            background: Theme.surface-base;
 
-            /*if(side-bar.current-item == 1):*/ aura := PageAura {
-                width: root.width - side-bar.width;
-                height: root.height;
-                visible: side-bar.current-item == Pages.aura;
-            }
+            VerticalLayout {
+                padding: 0px;
+                spacing: 0px;
 
-            if(side-bar.current-item == Pages.anime): PageAnime {
-                width: root.width - side-bar.width;
-                height: root.height;
-                visible: side-bar.current-item == Pages.anime;
-            }
+                if root.in_lighting_group: Rectangle {
+                    height: 50px;
+                    background: Theme.surface-base;
 
-            if(side-bar.current-item == Pages.slash): PageSlash {
-                width: root.width - side-bar.width;
-                height: root.height;
-                visible: side-bar.current-item == Pages.slash;
-            }
+                    HorizontalLayout {
+                        padding-left: Theme.space-lg;
+                        padding-right: Theme.space-lg;
+                        padding-top: Theme.space-sm;
+                        padding-bottom: Theme.space-sm;
+                        alignment: start;
+                        cross-axis-alignment: center;
 
-            if(side-bar.current-item == Pages.fans): fans := PageFans {
-                width: root.width - side-bar.width;
-                height: root.height;
-                visible: side-bar.current-item == Pages.fans;
-            }
+                        TabStrip {
+                            width: 420px;
+                            accent: Theme.accent-lighting;
+                            model: [@tr("Menu2" => "Aura"), @tr("Menu3" => "AniMe"), @tr("Menu4" => "Slash")];
+                            current: root.lighting_tab;
+                            selected(i) => {
+                                NavState.page = i == 0 ? Pages.aura : (i == 1 ? Pages.anime : Pages.slash);
+                            }
+                        }
 
-            if(side-bar.current-item == Pages.gpu): PageGPU {
-                width: root.width - side-bar.width;
-                height: root.height;
-                visible: side-bar.current-item == Pages.gpu;
-            }
-
-            if(side-bar.current-item == Pages.battery): PageBattery {
-                width: root.width - side-bar.width;
-                height: root.height;
-                visible: side-bar.current-item == Pages.battery;
-            }
-
-            if(side-bar.current-item == Pages.settings): PageAppSettings {
-                width: root.width - side-bar.width;
-                height: root.height;
-                visible: side-bar.current-item == Pages.settings;
-            }
-
-            if(side-bar.current-item == Pages.about): PageAbout {
-                width: root.width - side-bar.width;
-                height: root.height;
-                visible: side-bar.current-item == Pages.about;
-            }
-
-            if toast: Rectangle {
-                x: Theme.space-lg;
-                y: root.height - self.height - Theme.space-lg;
-                width: root.width - side-bar.width - Theme.space-lg * 2;
-                height: 40px;
-                opacity: 1.0;
-                border-radius: Theme.radius-md;
-                background: Theme.surface-card;
-                border-width: 1px;
-                border-color: Theme.border;
-                clip: true;
-                drop-shadow-blur: 10px;
-                drop-shadow-color: Colors.black.with-alpha(0.4);
-                TouchArea {
-                    height: 100%;
-                    width: 100%;
-                    clicked => {
-                        toast = false;
+                        Rectangle {}
                     }
                 }
 
-                Text {
-                    color: Theme.text-control;
-                    text: root.toast_text;
-                    font-size: Theme.font-md;
-                    horizontal-alignment: center;
-                    vertical-alignment: center;
-                    overflow: elide;
+                page-area := Rectangle {
+                    vertical-stretch: 1;
+                    horizontal-stretch: 1;
+
+                    if(NavState.page == Pages.dashboard): PageDashboard {
+                        width: parent.width;
+                        height: parent.height;
+                        available: root.sidebar_items_available;
+                        nav-target <=> NavState.page;
+                    }
+
+                    if(NavState.page == Pages.system): page := PageSystem {
+                        width: parent.width;
+                        height: parent.height;
+                    }
+
+                    /*if(NavState.page == 1):*/ aura := PageAura {
+                        width: parent.width;
+                        height: parent.height;
+                        visible: NavState.page == Pages.aura;
+                    }
+
+                    if(NavState.page == Pages.anime): PageAnime {
+                        width: parent.width;
+                        height: parent.height;
+                        visible: NavState.page == Pages.anime;
+                    }
+
+                    if(NavState.page == Pages.slash): PageSlash {
+                        width: parent.width;
+                        height: parent.height;
+                        visible: NavState.page == Pages.slash;
+                    }
+
+                    if(NavState.page == Pages.fans): fans := PageFans {
+                        width: parent.width;
+                        height: parent.height;
+                        visible: NavState.page == Pages.fans;
+                    }
+
+                    if(NavState.page == Pages.gpu): PageGPU {
+                        width: parent.width;
+                        height: parent.height;
+                        visible: NavState.page == Pages.gpu;
+                    }
+
+                    if(NavState.page == Pages.battery): PageBattery {
+                        width: parent.width;
+                        height: parent.height;
+                        visible: NavState.page == Pages.battery;
+                    }
+
+                    if(NavState.page == Pages.settings): PageAppSettings {
+                        width: parent.width;
+                        height: parent.height;
+                        visible: NavState.page == Pages.settings;
+                    }
+
+                    if(NavState.page == Pages.about): PageAbout {
+                        width: parent.width;
+                        height: parent.height;
+                        visible: NavState.page == Pages.about;
+                    }
+
+                    if toast: Rectangle {
+                        x: Theme.space-lg;
+                        y: parent.height - self.height - Theme.space-lg;
+                        width: parent.width - Theme.space-lg * 2;
+                        height: 40px;
+                        opacity: 1.0;
+                        border-radius: Theme.radius-md;
+                        background: Theme.surface-card;
+                        border-width: 1px;
+                        border-color: Theme.border;
+                        clip: true;
+                        drop-shadow-blur: 10px;
+                        drop-shadow-color: Colors.black.with-alpha(0.4);
+                        TouchArea {
+                            height: 100%;
+                            width: 100%;
+                            clicked => {
+                                toast = false;
+                            }
+                        }
+
+                        Text {
+                            color: Theme.text-control;
+                            text: root.toast_text;
+                            font-size: Theme.font-md;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                    }
                 }
             }
         }
@@ -247,7 +286,7 @@ export component MainWindow inherits Window {
         Rectangle {
             height: 100%;
             width: 100%;
-            background: Theme.surface;
+            background: Theme.surface-base;
             border-radius: Theme.radius-lg;
             border-width: 1px;
             border-color: Theme.border;
@@ -265,7 +304,7 @@ export component MainWindow inherits Window {
         y: 0px;
         width: root.width;
         height: root.height;
-        background: Theme.surface;
+        background: Theme.surface-base;
 
         VerticalBox {
             spacing: Theme.space-md;

@@ -1,0 +1,746 @@
+// OpenRevo-style ("cyber") building blocks.
+//
+// These are deliberately built from primitives only — no std-widgets. Slint's
+// `Palette` global is read-only apart from `color-scheme`, so the fluent
+// ComboBox/Slider/Switch cannot be recoloured to match this design language.
+// Anything that has to look right is drawn here instead.
+import { Theme } from "theme.slint";
+
+// ── Monochrome line icon ────────────────────────────────────────────────
+// The SVG is rasterised at build time (slint-build pulls in resvg through
+// i-slint-compiler's `software-renderer` feature), then recoloured at run
+// time by `colorize`, so one asset serves every tint in the theme.
+export component LineIcon inherits Image {
+    in property <length> icon-size: 18px;
+    in property <color> tint: Theme.text-control;
+
+    width: root.icon-size;
+    height: root.icon-size;
+    colorize: root.tint;
+}
+
+// ── Section title with the accent bar from the reference design ─────────
+export component SectionTitle inherits HorizontalLayout {
+    cross-axis-alignment: center;
+    in property <image> icon;
+    in property <string> title: "";
+    in property <string> status: "";
+    in property <color> accent: Theme.accent;
+
+    min-height: 22px;
+    spacing: Theme.space-sm;
+
+    Rectangle {
+        width: 3px;
+        height: 16px;
+        border-radius: 2px;
+        background: root.accent;
+    }
+
+    LineIcon {
+        source: root.icon;
+        icon-size: 17px;
+        tint: root.accent;
+    }
+
+    Text {
+        text: root.title;
+        font-size: Theme.font-lg;
+        font-weight: 700;
+        color: Theme.text;
+        vertical-alignment: center;
+        overflow: elide;
+    }
+
+    Rectangle {}
+
+    if root.status != "": Text {
+        text: root.status;
+        font-size: Theme.font-md;
+        color: Theme.text-muted;
+        vertical-alignment: center;
+        horizontal-alignment: right;
+        overflow: elide;
+    }
+}
+
+// One muted explanatory line under a section title.
+export component SectionHint inherits Text {
+    font-size: Theme.font-sm;
+    color: Theme.text-muted;
+    wrap: word-wrap;
+    vertical-alignment: center;
+}
+
+// Longer body copy inside a card: brighter than a hint so paragraphs stay
+// readable, and always wrapped.
+export component SectionBody inherits Text {
+    font-size: Theme.font-base;
+    color: Theme.text-control;
+    wrap: word-wrap;
+    vertical-alignment: center;
+}
+
+// ── Small pill used for telemetry and on/off state ──────────────────────
+export component Chip inherits Rectangle {
+    in property <string> text: "";
+    in property <color> tone: Theme.text-muted;
+    in property <bool> filled: true;
+
+    height: 20px;
+    border-radius: Theme.radius-sm;
+    background: root.filled ? root.tone.with-alpha(0.14) : transparent;
+    border-width: 1px;
+    border-color: root.tone.with-alpha(0.42);
+
+    HorizontalLayout {
+        padding-left: Theme.space-sm;
+        padding-right: Theme.space-sm;
+        Text {
+            text: root.text;
+            font-size: Theme.font-xs;
+            font-weight: 600;
+            color: root.tone;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// ── Metric tile: label + icon, large readout, footnote chip ─────────────
+export component MetricTile inherits Rectangle {
+    in property <string> title: "";
+    in property <image> icon;
+    in property <string> value: "";
+    in property <string> unit: "";
+    in property <string> footnote: "";
+    in property <color> accent: Theme.accent;
+    in property <color> value-tint: Theme.text;
+
+    min-height: 94px;
+    border-radius: Theme.radius-lg;
+    background: Theme.surface-card;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    VerticalLayout {
+        padding: Theme.space-md;
+        spacing: Theme.space-xs;
+        alignment: space-between;
+
+        HorizontalLayout {
+            cross-axis-alignment: center;
+            spacing: Theme.space-sm;
+            Text {
+                text: root.title;
+                font-size: Theme.font-md;
+                font-weight: 600;
+                color: Theme.text-muted;
+                vertical-alignment: center;
+                overflow: elide;
+                horizontal-stretch: 1;
+            }
+            LineIcon {
+                source: root.icon;
+                icon-size: 17px;
+                tint: root.accent;
+            }
+        }
+
+        HorizontalLayout {
+            spacing: 4px;
+            alignment: start;
+            Text {
+                text: root.value;
+                font-size: Theme.font-metric;
+                font-weight: 700;
+                color: root.value-tint;
+                vertical-alignment: bottom;
+            }
+            Text {
+                text: root.unit;
+                font-size: Theme.font-base;
+                font-weight: 600;
+                color: root.accent;
+                vertical-alignment: bottom;
+            }
+        }
+
+        HorizontalLayout {
+            alignment: start;
+            if root.footnote != "": Chip {
+                text: root.footnote;
+                tone: root.accent;
+            }
+        }
+    }
+}
+
+// ── Selectable option card (performance modes, GPU modes, …) ────────────
+export component OptionCard inherits Rectangle {
+    in property <image> icon;
+    in property <string> label: "";
+    in property <string> sublabel: "";
+    in property <bool> selected: false;
+    in property <bool> interactive: true;
+    in property <color> accent: Theme.accent;
+    callback clicked;
+
+    min-height: 78px;
+    border-radius: Theme.radius-lg;
+    border-width: 1px;
+    border-color: root.selected ? root.accent : Theme.border;
+    // Opaque tint on purpose: this card carries an accent drop-shadow, and a
+    // translucent background would let that glow bleed through the fill.
+    // `mix()` weights its receiver, so the accent has to be the receiver.
+    background: root.selected
+        ? root.accent.mix(Theme.surface-card, 14%)
+        : Theme.surface-card;
+    drop-shadow-blur: root.selected ? Theme.glow-blur : 0px;
+    drop-shadow-color: root.accent.with-alpha(Theme.glow-alpha);
+    opacity: root.interactive ? 1.0 : 0.45;
+
+    animate background { duration: 120ms; }
+    animate border-color { duration: 120ms; }
+
+    ta := TouchArea {
+        enabled: root.interactive;
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    VerticalLayout {
+        padding: Theme.space-sm;
+        spacing: 3px;
+        alignment: center;
+
+        LineIcon {
+            source: root.icon;
+            icon-size: 22px;
+            tint: root.selected ? root.accent : Theme.text-muted;
+        }
+
+        Text {
+            text: root.label;
+            font-size: Theme.font-base;
+            font-weight: 600;
+            color: root.selected ? root.accent : Theme.text-control;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+
+        if root.sublabel != "": Text {
+            text: root.sublabel;
+            font-size: Theme.font-xs;
+            color: Theme.text-muted;
+            horizontal-alignment: center;
+            overflow: elide;
+        }
+    }
+
+    hover := Rectangle {
+        border-radius: parent.border-radius;
+        background: white;
+        opacity: root.interactive ? (ta.has-hover ? (ta.pressed ? 0.10 : 0.04) : 0.0) : 0.0;
+        animate opacity { duration: 90ms; }
+    }
+}
+
+// ── Segmented control ──────────────────────────────────────────────────
+// `current` is the selected index; `Segmented` reports the index that was
+// picked so the caller can translate it back to whatever value it needs.
+export component Segmented inherits Rectangle {
+    in property <[string]> model;
+    in-out property <int> current: 0;
+    in property <bool> enabled: true;
+    in property <color> accent: Theme.accent;
+    callback selected(int);
+
+    height: 32px;
+    border-radius: Theme.radius-sm;
+    background: Theme.surface-sunken;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding: 3px;
+        spacing: 3px;
+        for item[i] in root.model: seg := Rectangle {
+            horizontal-stretch: 1;
+            border-radius: Theme.radius-sm - 2px;
+            background: i == root.current ? root.accent.with-alpha(0.18) : transparent;
+            border-width: i == root.current ? 1px : 0px;
+            border-color: root.accent.with-alpha(0.55);
+            opacity: root.enabled ? 1.0 : 0.45;
+
+            Text {
+                text: item;
+                font-size: Theme.font-sm;
+                font-weight: i == root.current ? 600 : 400;
+                color: i == root.current ? root.accent : Theme.text-muted;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+
+            TouchArea {
+                enabled: root.enabled;
+                mouse-cursor: pointer;
+                clicked => {
+                    root.current = i;
+                    root.selected(i);
+                }
+            }
+        }
+    }
+}
+
+// ── Bare switch, no label ─────────────────────────────────────────────
+// Used by the row-style wrappers in `common.slint`, which place the label
+// themselves.
+export component MiniSwitch inherits Rectangle {
+    in property <bool> enabled: true;
+    in property <color> accent: Theme.accent;
+    in-out property <bool> checked;
+    callback toggled(bool);
+
+    width: 42px;
+    height: 24px;
+    border-radius: 12px;
+    background: root.checked ? root.accent.with-alpha(0.85) : Theme.surface-sunken;
+    border-width: 1px;
+    border-color: root.checked ? root.accent : Theme.border-strong;
+    opacity: root.enabled ? 1.0 : 0.4;
+
+    animate background { duration: 120ms; }
+
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+
+    Rectangle {
+        width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        y: 2px;
+        x: root.checked ? parent.width - self.width - 3px : 3px;
+        background: root.checked ? Theme.accent-foreground : Theme.text-muted;
+        animate x { duration: 120ms; }
+    }
+}
+
+// ── Tab strip: segmented selector for switching views ─────────────────
+// Deliberately different from `Segmented`: this never writes back to
+// `current`, so callers can bind it to a derived expression (such as the
+// current page) and have the highlight stay live. Each tab is stretched by
+// the layout and the label carries no width binding, which avoids the
+// circular size dependency that made the previous sub-tab strip unclickable.
+export component TabStrip inherits Rectangle {
+    in property <[string]> model;
+    in property <int> current: 0;
+    in property <bool> enabled: true;
+    in property <color> accent: Theme.accent;
+    callback selected(int);
+
+    height: 34px;
+    border-radius: Theme.radius-sm;
+    background: Theme.surface-sunken;
+    border-width: 1px;
+    border-color: Theme.border;
+
+    HorizontalLayout {
+        padding: 3px;
+        spacing: 3px;
+
+        for item[i] in root.model: Rectangle {
+            horizontal-stretch: 1;
+            border-radius: Theme.radius-sm - 2px;
+            background: i == root.current ? root.accent.with-alpha(0.18) : transparent;
+            border-width: i == root.current ? 1px : 0px;
+            border-color: root.accent.with-alpha(0.55);
+            opacity: root.enabled ? 1.0 : 0.45;
+
+            Text {
+                text: item;
+                font-size: Theme.font-sm;
+                font-weight: i == root.current ? 600 : 400;
+                color: i == root.current ? root.accent : Theme.text-muted;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+
+            TouchArea {
+                enabled: root.enabled;
+                mouse-cursor: pointer;
+                clicked => {
+                    root.selected(i);
+                }
+            }
+        }
+    }
+}
+
+// ── Toggle row: label on the left, custom switch on the right ──────────
+export component ToggleRow inherits Rectangle {
+    in property <string> text: "";
+    in property <string> hint: "";
+    in property <bool> enabled: true;
+    in property <color> accent: Theme.accent;
+    in-out property <bool> checked;
+    callback toggled(bool);
+
+    min-height: Theme.row-height;
+    border-radius: Theme.radius-sm;
+
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => {
+            root.checked = !root.checked;
+            root.toggled(root.checked);
+        }
+    }
+
+    HorizontalLayout {
+        cross-axis-alignment: center;
+        padding-left: Theme.space-sm;
+        padding-right: Theme.space-sm;
+        spacing: Theme.space-md;
+
+        VerticalLayout {
+            alignment: center;
+            spacing: 1px;
+            Text {
+                text: root.text;
+                font-size: Theme.font-base;
+                color: root.enabled ? Theme.text-control : Theme.text-dim;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+            if root.hint != "": Text {
+                text: root.hint;
+                font-size: Theme.font-xs;
+                color: Theme.text-muted;
+                vertical-alignment: center;
+                overflow: elide;
+            }
+        }
+
+        Rectangle {}
+
+        // Track + knob, drawn by hand so it can carry the accent colour.
+        Rectangle {
+            width: 42px;
+            height: 24px;
+            border-radius: 12px;
+            background: root.checked ? root.accent.with-alpha(0.85) : Theme.surface-sunken;
+            border-width: 1px;
+            border-color: root.checked ? root.accent : Theme.border-strong;
+            opacity: root.enabled ? 1.0 : 0.4;
+            animate background { duration: 120ms; }
+
+            Rectangle {
+                width: 18px;
+                height: 18px;
+                border-radius: 9px;
+                y: 2px;
+                x: root.checked ? parent.width - self.width - 3px : 3px;
+                background: root.checked ? Theme.accent-foreground : Theme.text-muted;
+                animate x { duration: 120ms; }
+            }
+        }
+    }
+}
+
+// ── Slider drawn by hand (accent gradient fill, round knob) ────────────
+export component CyberSlider inherits Rectangle {
+    in property <float> minimum: 0;
+    in property <float> maximum: 100;
+    in property <bool> enabled: true;
+    in property <color> accent: Theme.accent;
+    // Hides the track and fill, leaving only the handle. The colour picker
+    // draws its own gradient underneath and needs the slider to be invisible.
+    in property <bool> bare: false;
+    in-out property <float> value: 50;
+
+    // Emitted continuously while dragging, and once on release.
+    callback moved(float);
+    callback released(float);
+
+    height: 26px;
+
+    private property <float> span: root.maximum - root.minimum;
+    private property <float> ratio:
+        root.span <= 0 ? 0
+        : Math.max(0, Math.min(1, (root.value - root.minimum) / root.span));
+
+    function value_at(px: length, w: length) -> float {
+        return root.minimum + (root.span * Math.max(0, Math.min(1, px / w)));
+    }
+
+    track := Rectangle {
+        height: 6px;
+        width: parent.width;
+        y: (parent.height - self.height) / 2;
+        border-radius: 3px;
+        background: Theme.surface-sunken;
+        border-width: 1px;
+        border-color: Theme.border;
+        opacity: root.enabled ? (root.bare ? 0.0 : 1.0) : 0.45;
+    }
+
+    fill := Rectangle {
+        height: track.height;
+        width: parent.width * root.ratio;
+        y: track.y;
+        border-radius: 3px;
+        background: @linear-gradient(90deg, root.accent.with-alpha(0.55) 0%, root.accent 100%);
+        opacity: root.enabled ? (root.bare ? 0.0 : 1.0) : 0.45;
+    }
+
+    knob := Rectangle {
+        width: 16px;
+        height: 16px;
+        border-radius: 8px;
+        y: (parent.height - self.height) / 2;
+        x: max(0px, min(parent.width - self.width, parent.width * root.ratio - self.width / 2));
+        background: white;
+        border-width: 2px;
+        border-color: root.accent;
+        drop-shadow-blur: 8px;
+        drop-shadow-color: root.accent.with-alpha(0.5);
+        opacity: root.enabled ? 1.0 : 0.4;
+    }
+
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        moved => {
+            if (self.pressed) {
+                root.value = root.value_at(self.mouse-x, self.width);
+                root.moved(root.value);
+            }
+        }
+        clicked => {
+            root.value = root.value_at(self.mouse-x, self.width);
+            root.released(root.value);
+        }
+    }
+}
+
+// ── Label + slider + numeric readout ──────────────────────────────────
+// The usual shape for a tunable value inside a card. `value` is in-out: the
+// slider writes through it so the readout tracks the drag, and callers that
+// only need the final value can handle `released` alone.
+export component SliderRow inherits Rectangle {
+    in property <string> text: "";
+    in property <float> minimum: 0;
+    in property <float> maximum: 100;
+    in property <bool> enabled: true;
+    in property <color> accent: Theme.accent;
+    in property <string> suffix: "";
+    in-out property <float> value: 0;
+    property <length> label-width: 150px;
+    callback moved(float);
+    callback released(float);
+
+    height: Theme.row-height;
+
+    HorizontalLayout {
+        padding-left: Theme.space-sm;
+        padding-right: Theme.space-sm;
+        spacing: Theme.space-md;
+        cross-axis-alignment: center;
+
+        Text {
+            width: root.label-width;
+            text: root.text;
+            font-size: Theme.font-base;
+            color: root.enabled ? Theme.text-control : Theme.text-dim;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+
+        CyberSlider {
+            width: parent.width - root.label-width - 58px - Theme.space-md * 2 - Theme.space-sm * 2;
+            accent: root.accent;
+            enabled: root.enabled;
+            minimum: root.minimum;
+            maximum: root.maximum;
+            value <=> root.value;
+            moved(v) => {
+                root.moved(v);
+            }
+            released(v) => {
+                root.released(v);
+            }
+        }
+
+        Rectangle {
+            min-width: 58px;
+            max-width: 58px;
+            min-height: 26px;
+            border-radius: Theme.radius-sm;
+            background: Theme.surface-raised;
+            border-width: 1px;
+            border-color: Theme.border;
+            Text {
+                text: Math.round(root.value) + root.suffix;
+                font-weight: 700;
+                font-size: Theme.font-md;
+                color: root.enabled ? root.accent : Theme.text-dim;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+}
+
+// ── Ghost button: icon + label on a bordered pill ──────────────────────
+export component GhostButton inherits Rectangle {
+    in property <image> icon;
+    in property <string> label: "";
+    in property <color> accent: Theme.accent;
+    in property <bool> enabled: true;
+    callback clicked;
+
+    min-width: 96px;
+    height: 32px;
+    border-radius: Theme.radius-sm;
+    background: Theme.surface-raised;
+    border-width: 1px;
+    border-color: ta.has-hover && root.enabled ? root.accent : Theme.border;
+    opacity: root.enabled ? 1.0 : 0.45;
+
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => {
+            root.clicked();
+        }
+    }
+
+    HorizontalLayout {
+        cross-axis-alignment: center;
+        padding-left: Theme.space-md;
+        padding-right: Theme.space-md;
+        spacing: Theme.space-sm;
+        alignment: center;
+        LineIcon {
+            source: root.icon;
+            icon-size: 15px;
+            tint: root.accent;
+        }
+        Text {
+            text: root.label;
+            font-size: Theme.font-md;
+            font-weight: 600;
+            color: root.accent;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// ── Dropdown with a hand-drawn popup list ──────────────────────────────
+export component Select inherits Rectangle {
+    // In-out so wrappers can two-way bind their own value property to it.
+    in-out property <string> text: "";
+    in property <string> placeholder: "";
+    in property <bool> enabled: true;
+    in property <color> accent: Theme.accent;
+    in-out property <int> current-index: 0;
+    in-out property <[string]> model;
+    callback selected(int);
+
+    min-width: 148px;
+    height: 32px;
+    border-radius: Theme.radius-sm;
+    background: Theme.surface-raised;
+    border-width: 1px;
+    border-color: ta.has-hover && root.enabled ? root.accent : Theme.border;
+    opacity: root.enabled ? 1.0 : 0.45;
+
+    ta := TouchArea {
+        enabled: root.enabled;
+        mouse-cursor: pointer;
+        clicked => {
+            popup.show();
+        }
+    }
+
+    HorizontalLayout {
+        cross-axis-alignment: center;
+        padding-left: Theme.space-md;
+        padding-right: Theme.space-sm;
+        spacing: Theme.space-sm;
+
+        Text {
+            text: root.text != "" ? root.text : root.placeholder;
+            font-size: Theme.font-md;
+            color: root.text != "" ? Theme.text-control : Theme.text-dim;
+            vertical-alignment: center;
+            overflow: elide;
+            horizontal-stretch: 1;
+        }
+
+        LineIcon {
+            source: @image-url("../icons/chevron-down.svg");
+            icon-size: 15px;
+            tint: Theme.text-muted;
+        }
+    }
+
+    popup := PopupWindow {
+        x: 0px;
+        y: root.height + 4px;
+        width: max(root.width, 160px);
+        height: min(root.model.length * 32px + 8px, 280px);
+
+        Rectangle {
+            background: Theme.surface-raised;
+            border-radius: Theme.radius-md;
+            border-width: 1px;
+            border-color: Theme.border-strong;
+            drop-shadow-blur: 16px;
+            drop-shadow-color: Colors.black.with-alpha(0.55);
+            clip: true;
+
+            VerticalLayout {
+                padding: 4px;
+                spacing: 2px;
+                alignment: start;
+
+                for item[i] in root.model: Rectangle {
+                    height: 30px;
+                    border-radius: 6px;
+                    background: i == root.current-index ? root.accent.with-alpha(0.16) : transparent;
+
+                    Text {
+                        text: item;
+                        font-size: Theme.font-md;
+                        color: i == root.current-index ? root.accent : Theme.text-control;
+                        vertical-alignment: center;
+                        x: Theme.space-sm;
+                        overflow: elide;
+                    }
+
+                    TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            root.current-index = i;
+                            root.selected(i);
+                            popup.close();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

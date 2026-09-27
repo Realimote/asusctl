@@ -1,8 +1,12 @@
 // Row-style controls shared by the settings-like pages: sliders, toggles and
-// dropdowns rendered as rounded cards. Their properties and callbacks are
-// bound from Rust (setup_*.rs) so the public API must stay stable.
-import { Palette, VerticalBox, StandardButton, Button, HorizontalBox, ComboBox, Switch, Slider } from "std-widgets.slint";
+// dropdowns rendered as rounded cards.
+//
+// The public API here is bound from Rust (`setup_*.rs`) and from `system.slint`,
+// so the property and callback names must stay stable. Only the internals were
+// swapped from std-widgets to the hand-drawn controls in `cyber.slint`, because
+// Slint's `Palette` is read-only and the standard widgets cannot be re-themed.
 import { Theme } from "theme.slint";
+import { CyberSlider, MiniSwitch, Select, GhostButton } from "cyber.slint";
 
 // Base card for a single control row.
 export component RogItem inherits Rectangle {
@@ -30,13 +34,14 @@ export component SystemSlider inherits RogItem {
     HorizontalLayout {
         HorizontalLayout {
             width: 40%;
-            alignment: LayoutAlignment.stretch;
+            alignment: stretch;
             padding-left: Theme.space-md;
+            cross-axis-alignment: center;
             HorizontalLayout {
                 spacing: Theme.space-xs;
                 Text {
                     font-size: Theme.font-base;
-                    vertical-alignment: TextVerticalAlignment.center;
+                    vertical-alignment: center;
                     color: Theme.text-control;
                     text: root.text;
                     overflow: elide;
@@ -45,23 +50,27 @@ export component SystemSlider inherits RogItem {
                 Text {
                     font-size: Theme.font-base;
                     font-weight: 600;
-                    horizontal-alignment: TextHorizontalAlignment.right;
-                    vertical-alignment: TextVerticalAlignment.center;
-                    color: Theme.text-control;
+                    horizontal-alignment: right;
+                    vertical-alignment: center;
+                    color: Theme.accent;
                     text: "\{Math.round(root.value)}";
                 }
             }
         }
 
-        HorizontalBox {
+        HorizontalLayout {
             padding-right: Theme.space-md;
-            slider := Slider {
+            cross-axis-alignment: center;
+
+            CyberSlider {
+                width: 100%;
+                accent: Theme.accent-system;
                 enabled: root.enabled;
                 maximum: root.maximum;
                 minimum: root.minimum;
                 value <=> root.value;
-                released(value) => {
-                    root.released(value)
+                released(v) => {
+                    root.released(v)
                 }
             }
         }
@@ -70,45 +79,59 @@ export component SystemSlider inherits RogItem {
             x: help.x - self.width + help.width - Theme.space-sm;
             y: help.y - self.height + help.height - Theme.space-sm;
             Rectangle {
-                drop-shadow-blur: 10px;
+                drop-shadow-blur: 16px;
                 drop-shadow-color: Colors.black.with-alpha(0.6);
                 border-radius: Theme.radius-lg;
-                border-color: Theme.border;
-                background: Theme.surface;
-                Dialog {
-                    title: root.title;
-                    VerticalBox {
-                        Text {
-                            max-width: 420px;
-                            font-size: Theme.font-lg;
-                            wrap: TextWrap.word-wrap;
-                            horizontal-alignment: TextHorizontalAlignment.center;
-                            text: root.title;
-                        }
+                border-width: 1px;
+                border-color: Theme.border-strong;
+                background: Theme.surface-raised;
 
-                        Rectangle {
-                            height: 1px;
-                            background: Theme.border;
-                        }
+                VerticalLayout {
+                    padding: Theme.space-md;
+                    spacing: Theme.space-sm;
+                    alignment: start;
 
-                        Text {
-                            max-width: 420px;
-                            font-size: Theme.font-base;
-                            wrap: TextWrap.word-wrap;
-                            text: root.help_text;
-                        }
+                    Text {
+                        text: root.title;
+                        font-size: Theme.font-lg;
+                        font-weight: 700;
+                        color: Theme.text;
                     }
 
-                    StandardButton {
-                        kind: ok;
+                    Rectangle {
+                        height: 1px;
+                        background: Theme.border;
+                    }
+
+                    Text {
+                        max-width: 420px;
+                        font-size: Theme.font-base;
+                        color: Theme.text-control;
+                        wrap: word-wrap;
+                        text: root.help_text;
+                    }
+
+                    HorizontalLayout {
+                        alignment: end;
+                        GhostButton {
+                            label: @tr("OK");
+                            accent: Theme.accent-system;
+                            clicked => {
+                                help_popup.close();
+                            }
+                        }
                     }
                 }
             }
         }
 
-        help := HorizontalBox {
-            if (help_text != ""): StandardButton {
-                kind: StandardButtonKind.help;
+        help := HorizontalLayout {
+            alignment: center;
+            padding-right: Theme.space-xs;
+            if (help_text != ""): GhostButton {
+                min-width: 62px;
+                accent: Theme.text-muted;
+                label: @tr("Help");
                 clicked => {
                     help_popup.show();
                 }
@@ -119,37 +142,58 @@ export component SystemSlider inherits RogItem {
             x: reset.x - self.width + reset.width;
             y: reset.y - self.height + reset.height;
             Rectangle {
-                drop-shadow-blur: 10px;
+                drop-shadow-blur: 16px;
                 drop-shadow-color: Colors.black.with-alpha(0.6);
                 border-radius: Theme.radius-lg;
-                border-color: Theme.border;
-                background: Theme.surface;
-                Dialog {
+                border-width: 1px;
+                border-color: Theme.border-strong;
+                background: Theme.surface-raised;
+
+                VerticalLayout {
+                    padding: Theme.space-md;
+                    spacing: Theme.space-sm;
+                    alignment: start;
+
                     Text {
                         max-width: 420px;
                         font-size: Theme.font-base;
-                        wrap: TextWrap.word-wrap;
+                        color: Theme.text;
+                        wrap: word-wrap;
                         text: @tr("confirm_reset" => "Are you sure you want to reset this?");
                     }
 
-                    StandardButton {
-                        kind: ok;
-                        clicked => {
-                            root.cb_do_reset();
-                        }
-                    }
+                    HorizontalLayout {
+                        alignment: end;
+                        spacing: Theme.space-sm;
 
-                    StandardButton {
-                        kind: cancel;
+                        GhostButton {
+                            label: @tr("Cancel");
+                            accent: Theme.text-muted;
+                            clicked => {
+                                reset_popup.close();
+                            }
+                        }
+
+                        GhostButton {
+                            label: @tr("OK");
+                            accent: Theme.status-danger;
+                            clicked => {
+                                root.cb_do_reset();
+                                reset_popup.close();
+                            }
+                        }
                     }
                 }
             }
         }
 
-        reset := HorizontalBox {
-            if (has_reset): StandardButton {
-                kind: StandardButtonKind.reset;
+        reset := HorizontalLayout {
+            alignment: center;
+            if (has_reset): GhostButton {
+                min-width: 62px;
+                accent: Theme.accent-system;
                 enabled: root.enabled;
+                label: @tr("Reset");
                 clicked => {
                     reset_popup.show();
                 }
@@ -165,12 +209,14 @@ export component SystemToggle inherits RogItem {
     callback toggled(bool);
     HorizontalLayout {
         spacing: Theme.space-xs;
+        cross-axis-alignment: center;
+
         HorizontalLayout {
-            alignment: LayoutAlignment.start;
+            alignment: start;
             padding-left: Theme.space-md;
             Text {
                 font-size: Theme.font-base;
-                vertical-alignment: TextVerticalAlignment.center;
+                vertical-alignment: center;
                 color: Theme.text-control;
                 text: root.text;
                 wrap: word-wrap;
@@ -178,11 +224,15 @@ export component SystemToggle inherits RogItem {
             }
         }
 
+        Rectangle {}
+
         HorizontalLayout {
-            alignment: LayoutAlignment.end;
+            alignment: end;
             padding-right: Theme.space-lg;
-            Switch {
+
+            MiniSwitch {
                 enabled: root.enabled;
+                accent: Theme.accent-system;
                 checked <=> root.checked;
                 toggled => {
                     root.toggled(root.checked)
@@ -194,17 +244,18 @@ export component SystemToggle inherits RogItem {
 
 export component SystemToggleInt inherits RogItem {
     in property <string> text;
-    // in-out property <bool> checked;
     in-out property <int> checked_int;
     callback toggled(int);
     HorizontalLayout {
         spacing: Theme.space-xs;
+        cross-axis-alignment: center;
+
         HorizontalLayout {
-            alignment: LayoutAlignment.start;
+            alignment: start;
             padding-left: Theme.space-md;
             Text {
                 font-size: Theme.font-base;
-                vertical-alignment: TextVerticalAlignment.center;
+                vertical-alignment: center;
                 color: Theme.text-control;
                 text: root.text;
                 wrap: word-wrap;
@@ -212,43 +263,18 @@ export component SystemToggleInt inherits RogItem {
             }
         }
 
+        Rectangle {}
+
         HorizontalLayout {
-            alignment: LayoutAlignment.end;
+            alignment: end;
             padding-right: Theme.space-lg;
-            Switch {
+
+            MiniSwitch {
+                accent: Theme.accent-system;
                 checked: root.checked_int != 0;
                 toggled => {
                     root.checked_int = self.checked ? 1 : 0;
                     root.toggled(root.checked_int);
-                }
-            }
-        }
-    }
-}
-
-export component SystemToggleVert inherits RogItem {
-    in property <string> text;
-    in-out property <bool> checked;
-    callback toggled(bool);
-    min-height: 86px;
-    VerticalLayout {
-        alignment: LayoutAlignment.space-around;
-        padding-top: Theme.space-sm;
-        Text {
-            font-size: Theme.font-base;
-            vertical-alignment: TextVerticalAlignment.bottom;
-            horizontal-alignment: TextHorizontalAlignment.center;
-            color: Theme.text-control;
-            text: root.text;
-        }
-
-        HorizontalLayout {
-            alignment: LayoutAlignment.center;
-            padding-bottom: Theme.space-sm;
-            Switch {
-                checked <=> root.checked;
-                toggled => {
-                    root.toggled(root.checked)
                 }
             }
         }
@@ -261,34 +287,38 @@ export component SystemDropdown inherits RogItem {
     in-out property <string> current_value;
     in-out property <[string]> model;
     in property <bool> enabled: true;
-    // mirrors the fluent ComboBox default; raise it to widen a specific dropdown
+    // mirrors the old ComboBox default; raise it to widen a specific dropdown
     in property <length> combo_min_width: 160px;
     callback selected(int);
     HorizontalLayout {
+        cross-axis-alignment: center;
+
         HorizontalLayout {
-            alignment: LayoutAlignment.start;
+            alignment: start;
             padding-left: Theme.space-md;
             Text {
                 font-size: Theme.font-base;
-                vertical-alignment: TextVerticalAlignment.center;
+                vertical-alignment: center;
                 color: Theme.text-control;
                 text: root.text;
                 overflow: elide;
             }
         }
 
+        Rectangle {}
+
         HorizontalLayout {
-            alignment: LayoutAlignment.end;
+            alignment: end;
             padding-right: Theme.space-lg;
-            padding-top: 7px;
-            padding-bottom: 7px;
-            ComboBox {
+
+            Select {
                 min-width: root.combo_min_width;
+                accent: Theme.accent-system;
                 model <=> root.model;
                 current-index <=> root.current_index;
-                current-value <=> root.current_value;
+                text <=> root.current_value;
                 enabled: root.enabled;
-                selected => {
+                selected(i) => {
                     root.selected(root.current_index)
                 }
             }

@@ -1,29 +1,49 @@
-import { Palette } from "std-widgets.slint";
+// Cooling / fan-curve chart.
+//
+// Drawn by hand instead of with std-widgets: Slint's `Palette` global is
+// read-only apart from `color-scheme`, so the standard widgets cannot be
+// re-themed, and the design calls for a gradient area chart with draggable
+// nodes.
+//
+// Two Slint limitations shape the implementation:
+//   * `for`-`in` cannot generate `Path` sub-elements (slint issue #754), so the
+//     curve and the area are built from one `Path` per segment.
+//   * `Path` has no dash support, so the cursor line is a column of short
+//     segments.
+// The area's vertical fade is therefore a gradient overlay on top of a flat
+// translucent fill, which also fades the lower part of the grid.
+//
+// The drag-constraint logic (`check()` and the four `scale_*` helpers) is
+// deliberately unchanged from the original implementation: it mirrors the curve
+// validation done by the daemon, and reworking it is a separate concern.
+import { Theme } from "theme.slint";
 
-export struct Node { x: length, y: length}
+export struct Node { x: length, y: length }
 
 export component Graph inherits Rectangle {
     in-out property <[Node]> nodes;
     in property <Node> node_min: { x: 0px, y: 0px };
     in property <Node> node_max: { x: 100px, y: 255px };
     property <length> graph_padding: 40px;
-    property <length> axis_font_size: 14px;
-    // Text {
-    //     x: 0;
-    //     text: "Fan PWM";
-    // }
+    property <length> axis_font_size: Theme.font-sm;
+    // Chart colour. The fans page is the only consumer today and uses the
+    // thermal accent.
+    in property <color> accent: Theme.accent-thermal;
+    // Node currently being dragged (or last touched) — draws the cursor line.
+    in-out property <int> active_node: -1;
 
-    // Text {
-    //     x: root.width / 2;
-    //     y: root.height - self.height;
-    //     text: "Temperature";
-    // }
+    background: transparent;
 
     graph := Rectangle {
         width: root.width - root.graph_padding * 2;
         height: root.height - root.graph_padding * 2;
         x: root.graph_padding;
         y: root.graph_padding;
+        border-radius: Theme.radius-md;
+        background: Theme.surface-sunken;
+        border-width: 1px;
+        border-color: Theme.border;
+
         function scale_x_to_graph(x: length) -> length {
             ((x - node_min.x) / (node_max.x - node_min.x)) * graph.width
         }
@@ -41,64 +61,75 @@ export component Graph inherits Rectangle {
         }
         //
 
-        for n in 11: Path {
-            viewbox-width: self.width / 1px;
-            viewbox-height: self.height / 1px;
-            stroke: Palette.alternate-foreground.darker(200%);
-            stroke-width: 1px;
-            MoveTo {
-                x: scale_x_to_graph(n * 10px) / 1px;
-                y: 0;
-                // scale_y_to_graph(n*1px) / 1px;
-            }
-
-            LineTo {
-                x: scale_x_to_graph(n * 10px) / 1px;
-                y: graph.height / 1px;
-                //scale_y_to_graph(n*1px) / 1px;
-            }
+        // ── Grid ────────────────────────────────────────────────────────
+        for n in 11: Rectangle {
+            x: scale_x_to_graph(n * 10px);
+            y: 0px;
+            width: 1px;
+            height: graph.height;
+            background: Theme.border;
         }
 
-        for n in 11: Text {
-            color: Palette.accent-background;
-            font-size <=> root.axis_font_size;
-            text: "\{n * 10}c";
-            x: scale_x_to_graph(n * 10px) - self.width / 3;
-            y: graph.height + 2px;
+        for n in 11: Rectangle {
+            x: 0px;
+            y: graph.height - scale_y_to_graph(n * 25.5px);
+            width: graph.width;
+            height: 1px;
+            background: Theme.border;
         }
 
-        for n in 11: Path {
-            viewbox-width: self.width / 1px;
-            viewbox-height: self.height / 1px;
-            stroke: Palette.alternate-foreground.darker(200%);
-            stroke-width: 1px;
-            MoveTo {
-                x: 0;
-                //scale_x_to_graph(n*10px) / 1px;
-                y: scale_y_to_graph(n * 25.5px) / 1px;
-            }
-
-            LineTo {
-                x: graph.width / 1px;
-                //scale_x_to_graph(n*10px) / 1px;
-                y: scale_y_to_graph(n * 25.5px) / 1px;
-            }
-        }
-
-        for n in 11: Text {
-            color: Palette.accent-background;
-            font-size <=> root.axis_font_size;
-            text: "\{n * 10}%";
-            x: - self.width;
-            y: graph.height - scale_y_to_graph(n * 25.5px) - self.height / 2;
-        }
-
-        for l[idx] in nodes: path := Rectangle {
+        // ── Area under the curve ────────────────────────────────────────
+        // One trapezoid per segment. The right edge is nudged out by 0.75px so
+        // neighbouring translucent shapes overlap instead of leaving a seam.
+        for l[idx] in nodes: Rectangle {
             if idx + 1 != nodes.length: Path {
-                viewbox-width: self.width / 1px;
-                viewbox-height: self.height / 1px;
-                stroke: Palette.control-foreground;
+                viewbox-width: graph.width / 1px;
+                viewbox-height: graph.height / 1px;
+                fill: root.accent.with-alpha(0.22);
+
+                MoveTo {
+                    x: scale_x_to_graph(nodes[idx].x) / 1px;
+                    y: graph.height / 1px - scale_y_to_graph(nodes[idx].y) / 1px;
+                }
+
+                LineTo {
+                    x: (scale_x_to_graph(nodes[idx + 1].x) + 0.75px) / 1px;
+                    y: graph.height / 1px - scale_y_to_graph(nodes[idx + 1].y) / 1px;
+                }
+
+                LineTo {
+                    x: (scale_x_to_graph(nodes[idx + 1].x) + 0.75px) / 1px;
+                    y: graph.height / 1px;
+                }
+
+                LineTo {
+                    x: scale_x_to_graph(nodes[idx].x) / 1px;
+                    y: graph.height / 1px;
+                }
+
+                Close { }
+            }
+        }
+
+        // ── Vertical fade (this is what makes the fill a gradient) ──────
+        Rectangle {
+            x: 0px;
+            y: 0px;
+            width: graph.width;
+            height: graph.height;
+            background: @linear-gradient(180deg, root.accent.with-alpha(0) 0%, Theme.surface-sunken.with-alpha(0.85) 100%);
+        }
+
+        // ── Curve ───────────────────────────────────────────────────────
+        for l[idx] in nodes: Rectangle {
+            if idx + 1 != nodes.length: Path {
+                viewbox-width: graph.width / 1px;
+                viewbox-height: graph.height / 1px;
+                stroke: root.accent;
                 stroke-width: 2px;
+                stroke-line-cap: round;
+                stroke-line-join: round;
+
                 MoveTo {
                     x: scale_x_to_graph(nodes[idx].x) / 1px;
                     y: graph.height / 1px - scale_y_to_graph(nodes[idx].y) / 1px;
@@ -111,27 +142,53 @@ export component Graph inherits Rectangle {
             }
         }
 
+        // ── Cursor line at the active node ──────────────────────────────
+        if root.active_node >= 0 && root.active_node < nodes.length: Rectangle {
+            x: scale_x_to_graph(nodes[root.active_node].x) - 0.5px;
+            y: 0px;
+            width: 1px;
+            height: graph.height;
+            background: transparent;
+
+            for k in 10: Rectangle {
+                y: graph.height / 10 * k;
+                width: 1px;
+                height: graph.height / 10 * 0.5;
+                background: root.accent;
+                opacity: 0.5;
+            }
+        }
+
+        // ── Draggable nodes ─────────────────────────────────────────────
         for n[idx] in nodes: Rectangle {
             states [
                 pressed when touch.pressed: {
-                    point.background: Palette.selection-background;
-                    tip.background: Palette.selection-background;
+                    point.background: root.accent;
+                    point.border-color: root.accent;
+                    tip.border-color: root.accent;
                     tip.opacity: 1.0;
+                    label.color: root.accent;
                 }
                 hover when touch.has-hover: {
-                    point.background: Palette.accent-background;
-                    tip.background: Palette.accent-background;
+                    point.background: root.accent;
+                    point.border-color: root.accent;
+                    tip.border-color: root.accent;
                     tip.opacity: 1.0;
+                    label.color: root.accent;
                 }
             ]
             //
             point := Rectangle {
-                background: Palette.control-foreground;
+                background: Theme.surface-card;
+                border-width: 2px;
+                border-color: root.accent;
                 x: scale_x_to_graph(n.x) - self.width / 2;
                 y: graph.height - scale_y_to_graph(n.y) - self.height / 2;
-                width: 18px;
+                width: 14px;
                 height: self.width;
                 border-radius: self.width / 2;
+                drop-shadow-blur: 10px;
+                drop-shadow-color: root.accent.with-alpha(0.45);
                 property <length> pad: 1px;
 
                 touch := TouchArea {
@@ -174,6 +231,7 @@ export component Graph inherits Rectangle {
                     //
                     moved => {
                         if (self.pressed) {
+                            root.active_node = idx;
                             n.x += scale_x_to_node(self.mouse-x - self.pressed-x);
                             n.y -= scale_y_to_node(self.mouse-y - self.pressed-y);
                             self.check();
@@ -182,6 +240,7 @@ export component Graph inherits Rectangle {
                     }
 
                     clicked => {
+                        root.active_node = idx;
                         self.check();
                     }
                     mouse-cursor: move;
@@ -189,15 +248,17 @@ export component Graph inherits Rectangle {
             }
 
             tip := Rectangle {
-                background: Palette.control-foreground;
-                opacity: 0.3;
-                border-radius: 12px;
+                background: Theme.surface-raised;
+                border-width: 1px;
+                border-color: Theme.border;
+                border-radius: Theme.radius-sm;
+                opacity: 0.75;
                 x: final_x_pos();
                 y: final_y_pos();
                 width: label.preferred-width + 14px;
-                height: label.preferred-height + 4px;
+                height: label.preferred-height + 6px;
                 function x_pos() -> length {
-                    scale_x_to_graph(n.x) - label.preferred-width - 8px
+                    scale_x_to_graph(n.x) - label.preferred-width - 10px
                 }
                 //
                 function final_x_pos() -> length {
@@ -209,7 +270,7 @@ export component Graph inherits Rectangle {
                 }
                 //
                 function y_pos() -> length {
-                    graph.height - scale_y_to_graph(n.y) - self.height - 4px
+                    graph.height - scale_y_to_graph(n.y) - self.height - 6px
                 }
                 //
                 function final_y_pos() -> length {
@@ -225,11 +286,31 @@ export component Graph inherits Rectangle {
                 }
                 //
                 label := Text {
-                    color: Palette.accent-foreground;
-                    font-size: 14px;
+                    color: Theme.text-control;
+                    font-size: Theme.font-sm;
+                    x: 7px;
+                    y: 3px;
                     text: "\{Math.floor(n.x / 1px)}c, \{fan_pct()}%";
                 }
             }
         }
+    }
+
+    // ── Axis labels ─────────────────────────────────────────────────────
+    // Kept outside the plot panel so they are not drawn over its border.
+    for n in 11: Text {
+        color: Theme.text-muted;
+        font-size: root.axis_font_size;
+        text: "\{n * 10}c";
+        x: graph.x + graph.scale_x_to_graph(n * 10px) - self.width / 2;
+        y: graph.y + graph.height + 4px;
+    }
+
+    for n in 11: Text {
+        color: Theme.text-muted;
+        font-size: root.axis_font_size;
+        text: "\{n * 10}%";
+        x: graph.x - self.width - 6px;
+        y: graph.y + graph.height - graph.scale_y_to_graph(n * 25.5px) - self.height / 2;
     }
 }

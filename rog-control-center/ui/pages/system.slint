@@ -1,6 +1,7 @@
 import { SystemSlider, SystemDropdown, SystemToggle, SystemToggleInt, RogItem } from "../widgets/common.slint";
-import { Button, HorizontalBox, ScrollView, Slider, Switch } from "std-widgets.slint";
-import { SectionCard, PageHeader, InfoBanner } from "../widgets/modern.slint";
+import { HorizontalBox, ScrollView } from "std-widgets.slint";
+import { SectionCard, InfoBanner } from "../widgets/modern.slint";
+import { SectionTitle, MiniSwitch, CyberSlider, GhostButton } from "../widgets/cyber.slint";
 import { Theme } from "../widgets/theme.slint";
 import { FanPageData } from "../types/fan_types.slint";
 
@@ -206,8 +207,9 @@ export component PageSystem inherits Rectangle {
             spacing: Theme.space-sm;
             alignment: LayoutAlignment.start;
 
-            PageHeader {
-                icon: "🎛";
+            SectionTitle {
+                icon: @image-url("../icons/zap.svg");
+                accent: Theme.accent-system;
                 title: @tr("Power settings");
             }
 
@@ -443,8 +445,10 @@ export component PageSystem inherits Rectangle {
                     }
                 }
 
-                Button {
-                    text: @tr("Advanced");
+                GhostButton {
+                    icon: @image-url("../icons/sliders-horizontal.svg");
+                    accent: Theme.accent-system;
+                    label: @tr("Advanced");
                     clicked => {
                         root.show_fade_cover = true;
                         root.show_throttle_advanced = true;
@@ -471,13 +475,14 @@ export component PageSystem inherits Rectangle {
                     HorizontalLayout {
                         width: 38%;
                         alignment: LayoutAlignment.stretch;
-                        Slider {
+                        CyberSlider {
+                            accent: Theme.accent-system;
                             enabled: true;
                             minimum: 0;
                             maximum: 100;
                             value: SystemPageData.screenpad_brightness;
                             released(value) => {
-                                SystemPageData.cb_screenpad_brightness(Math.floor(self.value));
+                                SystemPageData.cb_screenpad_brightness(Math.floor(value));
                             }
                         }
                     }
@@ -486,19 +491,31 @@ export component PageSystem inherits Rectangle {
                         width: 20%;
                         padding-left: Theme.space-md;
                         alignment: LayoutAlignment.stretch;
-                        Switch {
-                            text: @tr("Sync with primary");
-                            checked <=> SystemPageData.screenpad_sync_with_primary;
-                            toggled => {
-                                SystemPageData.cb_screenpad_sync_with_primary(self.checked);
+                        HorizontalLayout {
+                            spacing: Theme.space-sm;
+                            alignment: end;
+                            cross-axis-alignment: center;
+                            Text {
+                                font-size: Theme.font-base;
+                                color: Theme.text-control;
+                                vertical-alignment: center;
+                                text: @tr("Sync with primary");
+                            }
+                            MiniSwitch {
+                                accent: Theme.accent-system;
+                                checked <=> SystemPageData.screenpad_sync_with_primary;
+                                toggled => {
+                                    SystemPageData.cb_screenpad_sync_with_primary(self.checked);
+                                }
                             }
                         }
                     }
                 }
             }
 
-            PageHeader {
-                icon: "🛡";
+            SectionTitle {
+                icon: @image-url("../icons/shield-check.svg");
+                accent: Theme.accent-system;
                 title: @tr("Armoury settings");
             }
 
@@ -567,21 +584,41 @@ export component PageSystem inherits Rectangle {
                     }
                 }
 
-                if !SystemPageData.ppt_enabled_available: Switch {
-                    text: @tr("ppt_group_enabled" => "Enable Tuning");
-                    checked <=> SystemPageData.enable_ppt_group;
-                    enabled: ppt_unlocked;
-                    toggled => {
-                        SystemPageData.cb_enable_ppt_group(SystemPageData.enable_ppt_group)
+                if !SystemPageData.ppt_enabled_available: HorizontalLayout {
+                    spacing: Theme.space-sm;
+                    cross-axis-alignment: center;
+                    Text {
+                        font-size: Theme.font-base;
+                        color: Theme.text-control;
+                        vertical-alignment: center;
+                        text: @tr("ppt_group_enabled" => "Enable Tuning");
+                    }
+                    MiniSwitch {
+                        accent: Theme.accent-system;
+                        enabled: ppt_unlocked;
+                        checked <=> SystemPageData.enable_ppt_group;
+                        toggled => {
+                            SystemPageData.cb_enable_ppt_group(SystemPageData.enable_ppt_group)
+                        }
                     }
                 }
-                if SystemPageData.ppt_enabled_available: Switch {
-                    text: @tr("ppt_group_enabled" => "Enable Tuning");
-                    checked <=> SystemPageData.ppt_enabled;
-                    enabled: ppt_unlocked;
-                    toggled => {
-                        SystemPageData.enable_ppt_group = self.checked;
+                if SystemPageData.ppt_enabled_available: HorizontalLayout {
+                    spacing: Theme.space-sm;
+                    cross-axis-alignment: center;
+                    Text {
+                        font-size: Theme.font-base;
+                        color: Theme.text-control;
+                        vertical-alignment: center;
+                        text: @tr("ppt_group_enabled" => "Enable Tuning");
+                    }
+                    MiniSwitch {
+                        accent: Theme.accent-system;
+                        enabled: ppt_unlocked;
+                        checked <=> SystemPageData.ppt_enabled;
+                        toggled => {
+                            SystemPageData.enable_ppt_group = self.checked;
                         SystemPageData.cb_ppt_enabled(SystemPageData.ppt_enabled)
+                        }
                     }
                 }
             }
@@ -786,8 +823,9 @@ export component PageSystem inherits Rectangle {
                     VerticalLayout {
                         alignment: start;
                         spacing: Theme.space-sm;
-                        PageHeader {
-                            icon: "⚡";
+                        SectionTitle {
+                            icon: @image-url("../icons/zap.svg");
+                            accent: Theme.accent-system;
                             title: @tr("Energy Performance Preference linked to Throttle Policy");
                         }
 
@@ -836,8 +874,9 @@ export component PageSystem inherits Rectangle {
                     VerticalLayout {
                         alignment: start;
                         spacing: Theme.space-sm;
-                        PageHeader {
-                            icon: "🔌";
+                        SectionTitle {
+                            icon: @image-url("../icons/plug.svg");
+                            accent: Theme.accent-system;
                             title: @tr("Throttle Policy for power state");
                         }
 
@@ -887,11 +926,12 @@ export component PageSystem inherits Rectangle {
             }
         }
 
-        Button {
-            x: root.width - self.width - Theme.space-sm;
-            y: Theme.space-sm;
-            text: "✕";
-            height: 34px;
+        GhostButton {
+            x: root.width - self.width - Theme.space-lg;
+            y: Theme.space-lg;
+            icon: @image-url("../icons/x.svg");
+            accent: Theme.status-danger;
+            label: @tr("Close");
             clicked => {
                 root.show_throttle_advanced = false;
                 root.show_fade_cover = false;

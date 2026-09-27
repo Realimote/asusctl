@@ -1,6 +1,10 @@
-import { SystemDropdown, SystemToggle } from "../widgets/common.slint";
-import { Button, ScrollView } from "std-widgets.slint";
-import { SectionCard, PageHeader } from "../widgets/modern.slint";
+// AniMe Matrix page: brightness, display behaviour and the built-in animations.
+//
+// The main screen is a normal card stack; the two "Advanced" panels are
+// full-page overlays, kept from the original implementation.
+import { ScrollView } from "std-widgets.slint";
+import { SectionCard } from "../widgets/modern.slint";
+import { SectionTitle, ToggleRow, Select, GhostButton } from "../widgets/cyber.slint";
 import { Theme } from "../widgets/theme.slint";
 
 export global AnimePageData {
@@ -34,208 +38,312 @@ export global AnimePageData {
 }
 
 export component PageAnime inherits Rectangle {
-    property <bool> show_fade_cover: false;
     property <bool> show_display_advanced: false;
     property <bool> show_builtin_advanced: false;
     clip: true;
 
-    VerticalLayout {
-        padding: Theme.space-lg;
-        spacing: Theme.space-sm;
-        alignment: LayoutAlignment.start;
+    property <length> content-width: root.width - Theme.space-lg * 2;
+    property <length> card-inner-width: root.content-width - Theme.space-md * 2;
 
-        PageHeader {
-            icon: "📺";
-            title: @tr("AniMe Matrix");
-        }
+    // ── Main screen ─────────────────────────────────────────────────────
+    ScrollView {
+        VerticalLayout {
+            padding: Theme.space-lg;
+            spacing: Theme.space-md;
+            alignment: start;
 
-        SystemDropdown {
-            text: @tr("Anime Brightness" => "Brightness");
-            current_index <=> AnimePageData.brightness;
-            current_value: AnimePageData.brightness_names[AnimePageData.brightness];
-            model <=> AnimePageData.brightness_names;
-            selected => {
-                self.current_value = AnimePageData.brightness_names[AnimePageData.brightness];
-                AnimePageData.cb_brightness(AnimePageData.brightness)
+            SectionTitle {
+                icon: @image-url("../icons/panels-top-left.svg");
+                accent: Theme.accent-lighting;
+                title: @tr("AniMe Matrix");
+                status: AnimePageData.enable_display ? "" : @tr("anime_off" => "Off");
             }
-        }
 
-        SystemToggle {
-            text: @tr("Enable display");
-            checked <=> AnimePageData.enable_display;
-            toggled => {
-                AnimePageData.cb_enable_display(AnimePageData.enable_display)
-            }
-        }
+            SectionCard {
+                SectionTitle {
+                    icon: @image-url("../icons/sun.svg");
+                    accent: Theme.accent-lighting;
+                    title: @tr("Display");
+                    status: AnimePageData.brightness >= 0 && AnimePageData.brightness < AnimePageData.brightness_names.length
+                        ? AnimePageData.brightness_names[AnimePageData.brightness] : "";
+                }
 
-        HorizontalLayout {
-            alignment: LayoutAlignment.end;
-            Button {
-                text: @tr("Advanced");
-                min-width: 120px;
-                enabled <=> AnimePageData.enable_display;
-                clicked => {
-                    root.show_fade_cover = true;
-                    root.show_display_advanced = true;
+                HorizontalLayout {
+                    width: root.card-inner-width;
+                    spacing: Theme.space-md;
+                    cross-axis-alignment: center;
+
+                    Text {
+                        width: 150px;
+                        text: @tr("Anime Brightness" => "Brightness");
+                        font-size: Theme.font-base;
+                        color: Theme.text-control;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+
+                    Rectangle {}
+
+                    Select {
+                        min-width: 200px;
+                        accent: Theme.accent-lighting;
+                        model <=> AnimePageData.brightness_names;
+                        current-index <=> AnimePageData.brightness;
+                        text: AnimePageData.brightness >= 0 && AnimePageData.brightness < AnimePageData.brightness_names.length
+                            ? AnimePageData.brightness_names[AnimePageData.brightness] : "";
+                        selected(i) => {
+                            AnimePageData.cb_brightness(i);
+                        }
+                    }
+                }
+
+                ToggleRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-lighting;
+                    text: @tr("Enable display");
+                    checked <=> AnimePageData.enable_display;
+                    toggled => {
+                        AnimePageData.cb_enable_display(AnimePageData.enable_display)
+                    }
+                }
+
+                HorizontalLayout {
+                    width: root.card-inner-width;
+                    spacing: Theme.space-sm;
+                    alignment: end;
+
+                    GhostButton {
+                        icon: @image-url("../icons/sliders-horizontal.svg");
+                        accent: Theme.accent-lighting;
+                        enabled: AnimePageData.enable_display;
+                        label: @tr("Advanced");
+                        clicked => {
+                            root.show_display_advanced = true;
+                        }
+                    }
                 }
             }
-        }
 
-        SystemToggle {
-            text: @tr("Use built-in animations");
-            checked <=> AnimePageData.builtins_enabled;
-            toggled => {
-                AnimePageData.cb_builtins_enabled(AnimePageData.builtins_enabled)
-            }
-        }
-
-        HorizontalLayout {
-            alignment: LayoutAlignment.end;
-            Button {
-                text: @tr("Advanced");
-                min-width: 120px;
-                enabled <=> AnimePageData.builtins_enabled;
-                clicked => {
-                    root.show_fade_cover = true;
-                    root.show_builtin_advanced = true;
+            SectionCard {
+                SectionTitle {
+                    icon: @image-url("../icons/film.svg");
+                    accent: Theme.accent-lighting;
+                    title: @tr("Built-in animations");
+                    status: AnimePageData.builtins_enabled ? "" : @tr("anime_off" => "Off");
                 }
-            }
-        }
-    }
 
-    if root.show_fade_cover: Rectangle {
-        width: 100%;
-        height: 100%;
-        background: Theme.surface;
-        opacity: 0.8;
-        TouchArea {
-            height: 100%;
-            width: 100%;
-        }
-    }
+                ToggleRow {
+                    width: root.card-inner-width;
+                    accent: Theme.accent-lighting;
+                    text: @tr("Use built-in animations");
+                    checked <=> AnimePageData.builtins_enabled;
+                    toggled => {
+                        AnimePageData.cb_builtins_enabled(AnimePageData.builtins_enabled)
+                    }
+                }
 
-    if root.show_builtin_advanced: Rectangle {
-        x: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 1;
-        background: Theme.surface;
-        ScrollView {
-            VerticalLayout {
-                padding: Theme.space-lg;
-                spacing: Theme.space-md;
-                alignment: LayoutAlignment.start;
+                HorizontalLayout {
+                    width: root.card-inner-width;
+                    spacing: Theme.space-sm;
+                    alignment: end;
 
-                SectionCard {
-                    pad: Theme.space-lg;
-                    VerticalLayout {
-                        spacing: Theme.space-sm;
-                        alignment: LayoutAlignment.start;
-
-                        PageHeader {
-                            icon: "🎬";
-                            title: @tr("Set which builtin animations are played");
-                        }
-
-                        SystemDropdown {
-                            text: @tr("Anime built-in selection" => "Boot Animation");
-                            current_index <=> AnimePageData.boot_anim;
-                            current_value: AnimePageData.boot_anim_choices[AnimePageData.boot_anim];
-                            model <=> AnimePageData.boot_anim_choices;
-                            selected => {
-                                AnimePageData.cb_builtin_animations(AnimePageData.boot_anim, AnimePageData.awake_anim, AnimePageData.sleep_anim, AnimePageData.shutdown_anim)
-                            }
-                        }
-
-                        SystemDropdown {
-                            text: @tr("Anime built-in selection" => "Running Animation");
-                            current_index <=> AnimePageData.awake_anim;
-                            current_value: AnimePageData.awake_anim_choices[AnimePageData.awake_anim];
-                            model <=> AnimePageData.awake_anim_choices;
-                            selected => {
-                                AnimePageData.cb_builtin_animations(AnimePageData.boot_anim, AnimePageData.awake_anim, AnimePageData.sleep_anim, AnimePageData.shutdown_anim)
-                            }
-                        }
-
-                        SystemDropdown {
-                            text: @tr("Anime built-in selection" => "Sleep Animation");
-                            current_index <=> AnimePageData.sleep_anim;
-                            current_value: AnimePageData.sleep_anim_choices[AnimePageData.sleep_anim];
-                            model <=> AnimePageData.sleep_anim_choices;
-                            selected => {
-                                AnimePageData.cb_builtin_animations(AnimePageData.boot_anim, AnimePageData.awake_anim, AnimePageData.sleep_anim, AnimePageData.shutdown_anim)
-                            }
-                        }
-
-                        SystemDropdown {
-                            text: @tr("Anime built-in selection" => "Shutdown Animation");
-                            current_index <=> AnimePageData.shutdown_anim;
-                            current_value: AnimePageData.shutdown_anim_choices[AnimePageData.shutdown_anim];
-                            model <=> AnimePageData.shutdown_anim_choices;
-                            selected => {
-                                AnimePageData.cb_builtin_animations(AnimePageData.boot_anim, AnimePageData.awake_anim, AnimePageData.sleep_anim, AnimePageData.shutdown_anim)
-                            }
+                    GhostButton {
+                        icon: @image-url("../icons/film.svg");
+                        accent: Theme.accent-lighting;
+                        enabled: AnimePageData.builtins_enabled;
+                        label: @tr("Advanced");
+                        clicked => {
+                            root.show_builtin_advanced = true;
                         }
                     }
                 }
             }
         }
-
-        Button {
-            x: root.width - self.width - Theme.space-sm;
-            y: Theme.space-sm;
-            text: "✕";
-            height: 36px;
-            clicked => {
-                root.show_builtin_advanced = false;
-                root.show_fade_cover = false;
-            }
-        }
     }
 
+    // ── Advanced display overlay ────────────────────────────────────────
     if root.show_display_advanced: Rectangle {
         width: 100%;
         height: 100%;
-        opacity: 1;
-        background: Theme.surface;
+        background: Theme.surface-base;
+
         ScrollView {
             VerticalLayout {
                 padding: Theme.space-lg;
                 spacing: Theme.space-md;
-                alignment: LayoutAlignment.start;
+                alignment: start;
 
                 SectionCard {
-                    pad: Theme.space-lg;
-                    VerticalLayout {
-                        spacing: Theme.space-sm;
-                        alignment: LayoutAlignment.start;
+                    SectionTitle {
+                        icon: @image-url("../icons/monitor-off.svg");
+                        accent: Theme.accent-lighting;
+                        title: @tr("Advanced Display Settings");
+                    }
 
-                        PageHeader {
-                            icon: "🖥";
-                            title: @tr("Advanced Display Settings");
+                    ToggleRow {
+                        width: root.card-inner-width;
+                        accent: Theme.accent-lighting;
+                        text: @tr("Off when lid closed");
+                        checked <=> AnimePageData.off_when_lid_closed;
+                        toggled => {
+                            AnimePageData.cb_off_when_lid_closed(AnimePageData.off_when_lid_closed)
                         }
+                    }
 
-                        SystemToggle {
-                            text: @tr("Off when lid closed");
-                            checked <=> AnimePageData.off_when_lid_closed;
-                            toggled => {
-                                AnimePageData.cb_off_when_lid_closed(AnimePageData.off_when_lid_closed)
+                    ToggleRow {
+                        width: root.card-inner-width;
+                        accent: Theme.accent-lighting;
+                        text: @tr("Off when suspended");
+                        checked <=> AnimePageData.off_when_suspended;
+                        toggled => {
+                            AnimePageData.cb_off_when_suspended(AnimePageData.off_when_suspended)
+                        }
+                    }
+
+                    ToggleRow {
+                        width: root.card-inner-width;
+                        accent: Theme.accent-lighting;
+                        text: @tr("Off when on battery");
+                        checked <=> AnimePageData.off_when_unplugged;
+                        toggled => {
+                            AnimePageData.cb_off_when_unplugged(AnimePageData.off_when_unplugged)
+                        }
+                    }
+                }
+            }
+        }
+
+        GhostButton {
+            x: root.width - self.width - Theme.space-lg;
+            y: Theme.space-lg;
+            icon: @image-url("../icons/x.svg");
+            accent: Theme.status-danger;
+            label: @tr("Close");
+            clicked => {
+                root.show_display_advanced = false;
+            }
+        }
+    }
+
+    // ── Built-in animation overlay ──────────────────────────────────────
+    if root.show_builtin_advanced: Rectangle {
+        width: 100%;
+        height: 100%;
+        background: Theme.surface-base;
+
+        ScrollView {
+            VerticalLayout {
+                padding: Theme.space-lg;
+                spacing: Theme.space-md;
+                alignment: start;
+
+                SectionCard {
+                    SectionTitle {
+                        icon: @image-url("../icons/film.svg");
+                        accent: Theme.accent-lighting;
+                        title: @tr("Set which builtin animations are played");
+                    }
+
+                    HorizontalLayout {
+                        width: root.card-inner-width;
+                        spacing: Theme.space-md;
+                        cross-axis-alignment: center;
+                        Text {
+                            width: 150px;
+                            text: @tr("Anime built-in selection" => "Boot Animation");
+                            font-size: Theme.font-base;
+                            color: Theme.text-control;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                        Rectangle {}
+                        Select {
+                            min-width: 200px;
+                            accent: Theme.accent-lighting;
+                            model <=> AnimePageData.boot_anim_choices;
+                            current-index <=> AnimePageData.boot_anim;
+                            text: AnimePageData.boot_anim >= 0 && AnimePageData.boot_anim < AnimePageData.boot_anim_choices.length
+                                ? AnimePageData.boot_anim_choices[AnimePageData.boot_anim] : "";
+                            selected(i) => {
+                                AnimePageData.cb_builtin_animations(AnimePageData.boot_anim, AnimePageData.awake_anim, AnimePageData.sleep_anim, AnimePageData.shutdown_anim)
                             }
                         }
+                    }
 
-                        SystemToggle {
-                            text: @tr("Off when suspended");
-                            checked <=> AnimePageData.off_when_suspended;
-                            toggled => {
-                                AnimePageData.cb_off_when_suspended(AnimePageData.off_when_suspended)
+                    HorizontalLayout {
+                        width: root.card-inner-width;
+                        spacing: Theme.space-md;
+                        cross-axis-alignment: center;
+                        Text {
+                            width: 150px;
+                            text: @tr("Anime built-in selection" => "Running Animation");
+                            font-size: Theme.font-base;
+                            color: Theme.text-control;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                        Rectangle {}
+                        Select {
+                            min-width: 200px;
+                            accent: Theme.accent-lighting;
+                            model <=> AnimePageData.awake_anim_choices;
+                            current-index <=> AnimePageData.awake_anim;
+                            text: AnimePageData.awake_anim >= 0 && AnimePageData.awake_anim < AnimePageData.awake_anim_choices.length
+                                ? AnimePageData.awake_anim_choices[AnimePageData.awake_anim] : "";
+                            selected(i) => {
+                                AnimePageData.cb_builtin_animations(AnimePageData.boot_anim, AnimePageData.awake_anim, AnimePageData.sleep_anim, AnimePageData.shutdown_anim)
                             }
                         }
+                    }
 
-                        SystemToggle {
-                            text: @tr("Off when on battery");
-                            checked <=> AnimePageData.off_when_unplugged;
-                            toggled => {
-                                AnimePageData.cb_off_when_unplugged(AnimePageData.off_when_unplugged)
+                    HorizontalLayout {
+                        width: root.card-inner-width;
+                        spacing: Theme.space-md;
+                        cross-axis-alignment: center;
+                        Text {
+                            width: 150px;
+                            text: @tr("Anime built-in selection" => "Sleep Animation");
+                            font-size: Theme.font-base;
+                            color: Theme.text-control;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                        Rectangle {}
+                        Select {
+                            min-width: 200px;
+                            accent: Theme.accent-lighting;
+                            model <=> AnimePageData.sleep_anim_choices;
+                            current-index <=> AnimePageData.sleep_anim;
+                            text: AnimePageData.sleep_anim >= 0 && AnimePageData.sleep_anim < AnimePageData.sleep_anim_choices.length
+                                ? AnimePageData.sleep_anim_choices[AnimePageData.sleep_anim] : "";
+                            selected(i) => {
+                                AnimePageData.cb_builtin_animations(AnimePageData.boot_anim, AnimePageData.awake_anim, AnimePageData.sleep_anim, AnimePageData.shutdown_anim)
+                            }
+                        }
+                    }
+
+                    HorizontalLayout {
+                        width: root.card-inner-width;
+                        spacing: Theme.space-md;
+                        cross-axis-alignment: center;
+                        Text {
+                            width: 150px;
+                            text: @tr("Anime built-in selection" => "Shutdown Animation");
+                            font-size: Theme.font-base;
+                            color: Theme.text-control;
+                            vertical-alignment: center;
+                            overflow: elide;
+                        }
+                        Rectangle {}
+                        Select {
+                            min-width: 200px;
+                            accent: Theme.accent-lighting;
+                            model <=> AnimePageData.shutdown_anim_choices;
+                            current-index <=> AnimePageData.shutdown_anim;
+                            text: AnimePageData.shutdown_anim >= 0 && AnimePageData.shutdown_anim < AnimePageData.shutdown_anim_choices.length
+                                ? AnimePageData.shutdown_anim_choices[AnimePageData.shutdown_anim] : "";
+                            selected(i) => {
+                                AnimePageData.cb_builtin_animations(AnimePageData.boot_anim, AnimePageData.awake_anim, AnimePageData.sleep_anim, AnimePageData.shutdown_anim)
                             }
                         }
                     }
@@ -243,14 +351,14 @@ export component PageAnime inherits Rectangle {
             }
         }
 
-        Button {
-            x: root.width - self.width - Theme.space-sm;
-            y: Theme.space-sm;
-            text: "✕";
-            height: 36px;
+        GhostButton {
+            x: root.width - self.width - Theme.space-lg;
+            y: Theme.space-lg;
+            icon: @image-url("../icons/x.svg");
+            accent: Theme.status-danger;
+            label: @tr("Close");
             clicked => {
-                root.show_display_advanced = false;
-                root.show_fade_cover = false;
+                root.show_builtin_advanced = false;
             }
         }
     }
