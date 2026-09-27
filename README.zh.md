@@ -7,10 +7,7 @@
 > 守护进程（`asusd`）、命令行（`asusctl`）与各支撑库均跟随上游；**D-Bus 接口未做改动**，因此两侧可以独立更新。
 
 <p align="center">
-  <a href="https://www.patreon.com/bePatron?u=7602281"><img src="extra/icons/patreon-button.svg" width="190" height="32" alt="Become a Patron" /></a>
-  <a href="https://ko-fi.com/V7V5CLU67"><img src="extra/icons/ko-fi-button.svg" width="190" height="32" alt="Support me on Ko-fi" /></a>
   <a href="https://asus-linux.org/"><img src="extra/icons/rog-logo-button.svg" width="190" height="32" alt="Asus Linux Website" /></a>
-  <a href="https://discord.gg/B8GftRW2Hd"><img src="extra/icons/discord-button.svg" width="190" height="32" alt="Discord" /></a>
 </p>
 
 `asusctl` 是面向 Linux 的系统控制工具，主要支持华硕 ROG、TUF 与 ProArt 笔记本；非华硕硬件也能使用部分功能。
